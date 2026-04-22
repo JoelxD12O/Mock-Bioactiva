@@ -1,0 +1,3644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>CRM Leads - Flujo Final</title>
+<link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #eef2f7;
+    color: #0f172a;
+}
+
+header {
+    background: #111827;
+    color: white;
+    padding: 10px 14px;
+    font-size: 18px;
+}
+
+.header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.header-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.menu-toggle {
+    border: 1px solid rgba(148,163,184,0.35);
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.menu-toggle:hover {
+    background: #334155;
+}
+
+.container {
+    padding: 20px;
+}
+
+.app-layout {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    min-height: calc(100vh - 54px);
+    transition: grid-template-columns 0.2s ease;
+}
+
+.app-layout.desktop-sidebar-hidden {
+    grid-template-columns: 1fr;
+}
+
+.app-layout.desktop-sidebar-hidden .sidebar {
+    display: none;
+}
+
+.sidebar {
+    background: #0f172a;
+    color: #cbd5e1;
+    padding: 18px;
+    border-right: 1px solid rgba(148,163,184,0.2);
+}
+
+.sidebar-backdrop {
+    display: none;
+}
+
+.sidebar h2 {
+    font-size: 16px;
+    margin: 0 0 6px;
+    color: #f8fafc;
+}
+
+.sidebar p {
+    margin: 0 0 14px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.side-btn {
+    text-align: left;
+    border: 1px solid rgba(148,163,184,0.3);
+    background: #1e293b;
+    color: #cbd5e1;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.side-btn:hover {
+    background: #334155;
+}
+
+.side-btn.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+.side-ico {
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: rgba(148,163,184,0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex: 0 0 auto;
+}
+
+.side-btn.active .side-ico {
+    background: rgba(255,255,255,0.25);
+}
+
+.side-stats {
+    display: grid;
+    gap: 8px;
+}
+
+.guide-card {
+    margin-top: 12px;
+    background: #111827;
+    border: 1px solid rgba(148,163,184,0.2);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.guide-card h3 {
+    margin: 0 0 8px;
+    color: #f8fafc;
+    font-size: 13px;
+}
+
+.guide-list {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 8px;
+}
+
+.guide-list li {
+    color: #cbd5e1;
+    font-size: 12px;
+}
+
+.guide-link {
+    border: 0;
+    background: transparent;
+    color: #93c5fd;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    font-size: 12px;
+    text-align: left;
+}
+
+.guide-hint {
+    margin-top: 3px;
+    color: #94a3b8;
+    line-height: 1.35;
+}
+
+.guide-status {
+    margin-top: 10px;
+    border-top: 1px dashed rgba(148,163,184,0.25);
+    padding-top: 8px;
+    color: #e2e8f0;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.side-stat {
+    background: #111827;
+    border: 1px solid rgba(148,163,184,0.2);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.side-stat b {
+    display: block;
+    color: #94a3b8;
+    font-size: 11px;
+    margin-bottom: 2px;
+}
+
+.side-stat span {
+    font-size: 20px;
+    color: #ffffff;
+}
+
+.app-main {
+    width: min(1400px, 100%);
+}
+
+.app-section {
+    display: none;
+}
+
+.app-section.active {
+    display: block;
+    animation: sectionFadeIn 0.22s ease;
+}
+
+@keyframes sectionFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* DASHBOARD */
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.card-kpi {
+    background: white;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.card-kpi h4 {
+    margin: 0;
+    font-size: 13px;
+    color: gray;
+}
+
+.card-kpi span {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* FORM */
+.form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.form input, .form select, .form button {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.form button {
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+}
+
+.module {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.05);
+    margin-bottom: 12px;
+}
+
+.module h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
+}
+
+.module small {
+    color: #64748b;
+}
+
+.master-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.list-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.05);
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.list-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.list-meta {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.export-btn {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.export-btn:hover {
+    background: #e2e8f0;
+}
+
+.pipeline-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.panel-inline-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: 6px 0 8px;
+}
+
+.list-search {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 9px 10px;
+    margin-bottom: 10px;
+}
+
+.table-wrap {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: auto;
+    max-height: 470px;
+}
+
+.master-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: #ffffff;
+}
+
+.master-table th,
+.master-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.master-table th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.master-table tr:last-child td {
+    border-bottom: none;
+}
+
+.pager {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.pager button {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.pager button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.inline-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.status-msg {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.status-ok {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-warn {
+    background: #fef9c3;
+    color: #854d0e;
+}
+
+.status-err {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.muted {
+    color: #64748b;
+    font-size: 13px;
+}
+
+/* PIPELINE */
+.pipeline {
+    display: flex;
+    gap: 10px;
+}
+
+.column {
+    flex: 1;
+    background: #dfe6e9;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.column h3 {
+    text-align: center;
+    font-size: 14px;
+}
+
+.lead {
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+
+.lead-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: start;
+}
+
+.lead-open {
+    border: none;
+    background: #e2e8f0;
+    color: #0f172a;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.lead-open:hover {
+    background: #cbd5e1;
+}
+
+.empty-state {
+    background: rgba(255,255,255,0.75);
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    color: #64748b;
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.lead small {
+    color: gray;
+}
+
+.lead-meta {
+    margin-top: 5px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.pill {
+    font-size: 11px;
+    border-radius: 999px;
+    padding: 2px 8px;
+    background: #e2e8f0;
+    color: #334155;
+}
+
+/* PANEL */
+.panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    transform: translateX(100%);
+    width: clamp(320px, 34vw, 420px);
+    max-width: 100vw;
+    height: 100vh;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: -20px 0 50px rgba(15,23,42,0.18);
+    transition: transform 0.28s ease;
+    padding: 18px;
+    overflow-y: auto;
+    z-index: 30;
+    border-left: 1px solid rgba(148,163,184,0.25);
+}
+
+.panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 20px;
+}
+
+.panel-close {
+    border: 0;
+    background: #e2e8f0;
+    color: #0f172a;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.panel-close:hover {
+    background: #cbd5e1;
+}
+
+.panel.open {
+    transform: translateX(0);
+}
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.36);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+    z-index: 20;
+}
+
+.backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.activity {
+    background: #f1f5f9;
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+
+textarea {
+    width: 100%;
+    min-height: 84px;
+    box-sizing: border-box;
+    resize: vertical;
+    margin-top: 8px;
+}
+
+.panel label {
+    display: block;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.panel input,
+.panel select,
+.panel textarea {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+}
+
+.label-with-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.info-dot {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 999px;
+    font-size: 12px;
+    line-height: 1;
+    cursor: help;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.field-help {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: -2px;
+    margin-bottom: 8px;
+    line-height: 1.35;
+}
+
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 4px 0 8px;
+}
+
+.quick-note {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.quick-note:hover {
+    background: #e2e8f0;
+}
+
+.panel button:not(.panel-close):not(.info-dot):not(.quick-note) {
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.panel button:hover {
+    background: #1d4ed8;
+}
+
+@media (max-width: 900px) {
+    .app-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 54px;
+        left: 0;
+        bottom: 0;
+        width: min(88vw, 320px);
+        z-index: 30;
+        transform: translateX(-102%);
+        transition: transform 0.2s ease;
+        overflow-y: auto;
+    }
+
+    .app-layout.mobile-sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+
+    .sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 54px 0 0;
+        background: rgba(15, 23, 42, 0.4);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        z-index: 25;
+    }
+
+    .app-layout.mobile-sidebar-open .sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .side-nav {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+
+    .dashboard {
+        grid-template-columns: repeat(2,1fr);
+    }
+
+    .pipeline {
+        flex-direction: column;
+    }
+
+    .form {
+        flex-direction: column;
+    }
+
+    .inline-row {
+        grid-template-columns: 1fr;
+    }
+
+    .master-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .panel {
+        width: min(100vw, 380px);
+    }
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+    <div class="header-inner">
+        <div class="header-title">CRM Leads - Gestión Comercial</div>
+        <button id="menuToggle" class="menu-toggle" type="button" aria-label="Abrir o cerrar menu" aria-expanded="false" data-tippy-content="Abre o cierra la barra lateral. En escritorio tambien puedes ocultarla para ganar espacio.">☰ Menu</button>
+    </div>
+</header>
+
+<div class="app-layout">
+    <aside class="sidebar">
+        <h2>Navegacion CRM</h2>
+        <p>Flujo ordenado: base maestra y luego pipeline comercial.</p>
+
+        <div class="side-nav">
+            <button class="side-btn active" data-section="captura" data-tippy-content="Entra a la captura de organizaciones, contactos y conversion a lead."><span class="side-ico">C</span>Captura y validacion</button>
+            <button class="side-btn" data-section="cotizaciones" data-tippy-content="Registra y revisa las cotizaciones comerciales del lead."><span class="side-ico">Q</span>Cotizaciones</button>
+            <button class="side-btn" data-section="base" data-tippy-content="Consulta la base maestra de organizaciones y contactos."><span class="side-ico">B</span>Base maestra</button>
+            <button class="side-btn" data-section="pipeline" data-tippy-content="Revisa el pipeline de seguimiento, estados y actividades."><span class="side-ico">P</span>Pipeline y seguimiento</button>
+        </div>
+
+        <div class="side-stats">
+            <div class="side-stat"><b>Organizaciones</b><span id="sideOrg">0</span></div>
+            <div class="side-stat"><b>Contactos</b><span id="sideContactos">0</span></div>
+            <div class="side-stat"><b>Leads activos</b><span id="sideLeads">0</span></div>
+            <div class="side-stat"><b>Cotizaciones</b><span id="sideCotizaciones">0</span></div>
+        </div>
+
+        <div class="guide-card">
+            <h3>Guia rapida 1-2-3</h3>
+            <div class="field-help">Primero crea la base, luego valida el contacto y al final convierte eso en oportunidad y seguimiento.</div>
+            <ol class="guide-list">
+                <li>
+                    <button class="guide-link" type="button" data-go-section="captura" data-focus="orgRuc">Paso 1: Registrar organizacion</button>
+                    <div class="guide-hint">Completa RUC, organizacion, tipo, tamano, sector y departamento. Eso evita duplicados y alimenta contacto, lead y cotizacion.</div>
+                </li>
+                <li>
+                    <button class="guide-link" type="button" data-go-section="captura" data-focus="conCodigoIndividual">Paso 2: Registrar contacto</button>
+                    <div class="guide-hint">Ingresa codigo individual, nombres, apellidos, correo 1 y selecciona la organizacion para autocompletar su contexto.</div>
+                </li>
+                <li>
+                    <button class="guide-link" type="button" data-go-section="captura" data-focus="leadContacto">Paso 3: Convertir a lead</button>
+                    <div class="guide-hint">Agrega canal, fecha de creacion y fecha de proxima actividad. Luego abre el lead en pipeline para registrar desafio, historial y seguimiento.</div>
+                </li>
+                <li>
+                    <button class="guide-link" type="button" data-go-section="cotizaciones" data-focus="cotLead">Paso 4: Registrar cotizacion</button>
+                    <div class="guide-hint">Selecciona el lead y se autocompleta: Dirigido a, Cliente, Servicio y Remitente. Completa monto, estado y link.</div>
+                </li>
+                <li>
+                    <button class="guide-link" type="button" data-go-section="pipeline">Paso 5: Seguimiento</button>
+                    <div class="guide-hint">En Pipeline, pulsa Abrir, cambia estado (Nuevo -> Proceso -> Propuesta -> Cerrado) y agrega actividades.</div>
+                </li>
+            </ol>
+            <div id="guideStatus" class="guide-status">Progreso del flujo: pendiente.</div>
+            <div class="panel-inline-actions" style="justify-content:flex-start; margin-top:10px;">
+                <button id="reloadDemoBtn" class="export-btn" type="button" data-tippy-content="Recarga los datos demo sincronizados y reemplaza los datos actuales del navegador.">Recargar datos demo</button>
+            </div>
+        </div>
+    </aside>
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+    <main class="container app-main">
+        <section id="section-captura" class="app-section active">
+            <div class="module">
+                <h3>Autocompletado guiado</h3>
+                <small>Usa este boton para cargar un ejemplo paso a paso: primero organizacion, luego contacto y despues lead.</small>
+                <div class="panel-inline-actions" style="justify-content:flex-start; margin-top:10px;">
+                    <button id="demoWizardBtn" class="export-btn" type="button" data-tippy-content="Completa el formulario por pasos usando los datos de ejemplo.">Autocompletar paso a paso</button>
+                </div>
+                <div id="demoWizardMsg" class="field-help" style="margin-top:6px; margin-bottom:0;">Paso 1: completa la organizacion.</div>
+            </div>
+
+            <div class="module">
+                <h3>1) Organizaciones (validar por RUC)</h3>
+                <small>Campos obligatorios: RUC, Organizacion, Tipo de organizacion, Tamano, Sector y Departamento.</small>
+                <div class="form inline-row">
+                    <input id="orgRuc" placeholder="RUC (11 digitos) *" required data-tippy-content="Usa el RUC sin espacios. Se usa para validar duplicados y conectar contactos con la organizacion.">
+                    <input id="orgNombre" placeholder="Organizacion *" required data-tippy-content="Nombre corto o nombre comercial de la organizacion.">
+                    <input id="orgNombreCompleto" placeholder="Nombre completo" data-tippy-content="Nombre legal o denominacion completa de la organizacion.">
+                    <input id="orgContactoVigente" placeholder="Contacto vigente (ej: Contacto activo)" data-tippy-content="Texto libre para marcar si la ficha tiene un contacto activo o un estado interno.">
+                    <input id="orgTipo" placeholder="Tipo de organizacion *" required data-tippy-content="Ejemplos: empresa nacional, cooperativa, gremio, universidad publica, entidad publica.">
+                    <input id="orgTamano" placeholder="Tamano (Grande, Mediana, Pequena) *" required data-tippy-content="Sirve para clasificar el peso comercial de la organizacion.">
+                    <input id="orgSector" placeholder="Sector *" required data-tippy-content="Ejemplos: agricola, comercio, educacion, financiero, industrial.">
+                    <input id="orgUbicacion" placeholder="Ubicacion" data-tippy-content="Ciudad o region principal donde opera la organizacion.">
+                    <input id="orgAlianzas" placeholder="Alianzas" data-tippy-content="Convenios, redes, socios o articulaciones relevantes.">
+                    <input id="orgActividades" placeholder="Actividades" data-tippy-content="Que hace la organizacion o en que tipo de proyectos participa.">
+                    <input id="orgDepartamento" placeholder="Departamento *" required data-tippy-content="Departamento o region administrativa para ubicar la ficha.">
+                    <input id="orgLinkedin" placeholder="LinkedIn" data-tippy-content="URL o referencia a la cuenta de LinkedIn de la organizacion.">
+                </div>
+                <button onclick="addOrganizacion()">Agregar organizacion</button>
+                <div id="orgMsg" class="status-msg muted">Busca por RUC antes de crear para evitar duplicados.</div>
+            </div>
+
+            <div class="module">
+                <h3>2) Contactos (base maestra)</h3>
+                <div class="form inline-row">
+                    <input id="conCodigoIndividual" placeholder="Codigo individual *" data-tippy-content="Codigo unico del contacto. Sirve para encontrarlo rapido y evitar duplicados.">
+                    <input id="conVocativo" placeholder="Vocativo (Sr., Sra., etc.)" data-tippy-content="Tratamiento del contacto para comunicaciones formales.">
+                    <input id="conNombres" placeholder="Nombres" data-tippy-content="Nombres del contacto.">
+                    <input id="conApellidos" placeholder="Apellidos" data-tippy-content="Apellidos del contacto.">
+                    <input id="conNombreCompleto" placeholder="Nombres y apellidos" readonly data-tippy-content="Se completa automaticamente con nombres y apellidos.">
+                    <input id="conCorreo" placeholder="Correo electronico 1" data-tippy-content="Correo principal del contacto. Es obligatorio.">
+                    <input id="conCorreo2" placeholder="Correo electronico 2" data-tippy-content="Correo alterno o secundario si existe.">
+                    <input id="conTelefono" placeholder="Telefono" data-tippy-content="Numero de contacto directo, con o sin codigo de pais.">
+                    <input id="conCargo" placeholder="Cargo" data-tippy-content="Puesto o rol dentro de la organizacion.">
+                    <input id="conComentarios" placeholder="Comentarios" data-tippy-content="Notas utiles del contacto: observaciones, preferencias o contexto.">
+                    <select id="conOrg" data-tippy-content="Selecciona la organizacion antes de guardar para autocompletar contexto."></select>
+                </div>
+                <div class="form inline-row" style="margin-top:8px;">
+                    <input id="conOrgAbrev" placeholder="Organizacion abreviada auto-completada" readonly data-tippy-content="Nombre corto de la organizacion seleccionada.">
+                    <input id="conOrgExtendido" placeholder="Organizacion extendida auto-completada" readonly data-tippy-content="Nombre completo o denominacion extendida de la organizacion.">
+                    <input id="conOrgRuc" placeholder="RUC auto-completado" readonly data-tippy-content="RUC de la organizacion relacionada.">
+                    <input id="conOrgTipo" placeholder="Tipo auto-completado" readonly data-tippy-content="Tipo de la organizacion relacionada.">
+                    <input id="conOrgTamano" placeholder="Tamano auto-completado" readonly data-tippy-content="Tamano de la organizacion relacionada.">
+                    <input id="conOrgSector" placeholder="Sector auto-completado" readonly data-tippy-content="Sector principal de la organizacion relacionada.">
+                    <input id="conOrgDepartamento" placeholder="Departamento auto-completado" readonly data-tippy-content="Departamento de la organizacion relacionada.">
+                    <input id="conOrgUbicacion" placeholder="Ubicacion auto-completada" readonly data-tippy-content="Ubicacion de la organizacion relacionada.">
+                </div>
+                <button onclick="addContacto()">Agregar contacto</button>
+                <div id="conMsg" class="status-msg muted">Sin organizacion no se puede registrar contacto.</div>
+            </div>
+
+            <div class="module">
+                <h3>3) Convertir contacto a lead</h3>
+                <small>Acá se define la oportunidad comercial: qué servicio interesa, quién la gestiona, desde qué canal llegó y cuándo se debe retomar.</small>
+                <div class="form inline-row">
+                    <label class="label-with-info">
+                        <span>Contacto base</span>
+                        <button class="info-dot" type="button" data-tippy-content="Elige el contacto base para abrir el lead.">i</button>
+                    </label>
+                    <select id="leadContacto" data-tippy-content="Elige el contacto base para abrir el lead."></select>
+
+                    <label class="label-with-info">
+                        <span>Servicio de interes</span>
+                        <button class="info-dot" type="button" data-tippy-content="Servicio, proyecto o necesidad comercial detectada.">i</button>
+                    </label>
+                    <input id="leadServicio" placeholder="Servicio de interes" data-tippy-content="Servicio, proyecto o necesidad comercial detectada.">
+
+                    <label class="label-with-info">
+                        <span>Encargado comercial</span>
+                        <button class="info-dot" type="button" data-tippy-content="Persona responsable interna del seguimiento.">i</button>
+                    </label>
+                    <input id="leadEncargado" placeholder="Encargado comercial" data-tippy-content="Persona responsable interna del seguimiento.">
+
+                    <label class="label-with-info">
+                        <span>Canal de captacion</span>
+                        <button class="info-dot" type="button" data-tippy-content="Origen del lead: referido, evento, prospeccion, LinkedIn, etc.">i</button>
+                    </label>
+                    <input id="leadCanal" placeholder="Canal de captacion" data-tippy-content="Origen del lead: referido, evento, prospeccion, LinkedIn, etc.">
+
+                    <label class="label-with-info">
+                        <span>Proxima actividad</span>
+                        <button class="info-dot" type="button" data-tippy-content="Descripcion concreta de la siguiente accion a realizar.">i</button>
+                    </label>
+                    <input id="leadNext" placeholder="Proxima actividad" data-tippy-content="Descripcion concreta de la siguiente accion a realizar.">
+                </div>
+                <div class="form inline-row" style="margin-top:8px;">
+                    <label class="label-with-info">
+                        <span>Fecha de creacion</span>
+                        <button class="info-dot" type="button" data-tippy-content="Fecha en que se registro o valido el lead.">i</button>
+                    </label>
+                    <input id="leadFechaCreacion" type="date" placeholder="Fecha de creacion" data-tippy-content="Fecha en que se registro o valido el lead.">
+
+                    <label class="label-with-info">
+                        <span>Fecha de proxima actividad</span>
+                        <button class="info-dot" type="button" data-tippy-content="Fecha prevista para el siguiente contacto o seguimiento.">i</button>
+                    </label>
+                    <input id="leadFechaProxima" type="date" placeholder="Fecha de proxima actividad" data-tippy-content="Fecha prevista para el siguiente contacto o seguimiento.">
+                </div>
+                <button onclick="addLeadFromContacto()">Agregar Lead</button>
+                <div id="leadMsg" class="status-msg muted">Solo crea lead si hay interes comercial validado.</div>
+            </div>
+        </section>
+
+        <section id="section-pipeline" class="app-section">
+            <div class="pipeline-actions">
+                <button id="exportLeadsBtn" class="export-btn" type="button" data-tippy-content="Descarga el pipeline completo de leads en CSV para Excel.">Exportar leads (CSV)</button>
+            </div>
+            <div class="dashboard">
+                <div class="card-kpi"><h4 data-tippy-content="Cantidad total de leads visibles en el pipeline.">Total</h4><span id="total">0</span></div>
+                <div class="card-kpi"><h4 data-tippy-content="Leads que estan en seguimiento activo.">Proceso</h4><span id="proceso">0</span></div>
+                <div class="card-kpi"><h4 data-tippy-content="Leads con propuesta enviada o en evaluacion.">Propuesta</h4><span id="propuesta">0</span></div>
+                <div class="card-kpi"><h4 data-tippy-content="Leads cerrados ganados o perdidos.">Cerrado</h4><span id="cerrado">0</span></div>
+            </div>
+
+            <div class="pipeline">
+                <div class="column"><h3>Nuevo</h3><div id="nuevo"></div></div>
+                <div class="column"><h3>Proceso</h3><div id="procesoCol"></div></div>
+                <div class="column"><h3>Propuesta</h3><div id="propuestaCol"></div></div>
+                <div class="column"><h3>Cerrado</h3><div id="cerradoCol"></div></div>
+            </div>
+        </section>
+
+        <section id="section-cotizaciones" class="app-section">
+            <div class="module">
+                <h3>Autocompletado guiado de cotizacion</h3>
+                <small>Este mock es independiente del flujo de captura y completa todos los campos de cotizacion con un ejemplo distinto.</small>
+                <div class="panel-inline-actions" style="justify-content:flex-start; margin-top:10px;">
+                    <button id="demoCotWizardBtn" class="export-btn" type="button" data-tippy-content="Llena todos los campos de cotizacion con un ejemplo completo.">Autocompletar cotizacion</button>
+                </div>
+                <div id="demoCotWizardMsg" class="field-help" style="margin-top:6px; margin-bottom:0;">Pulsa el boton para cargar una cotizacion demo completa.</div>
+            </div>
+
+            <div class="module">
+                <h3>Cotizaciones comerciales</h3>
+                <small>Registro similar a tu hoja actual: lead, cliente, servicio, monto, estado, remitente, contexto de organizacion y link de propuesta.</small>
+            </div>
+
+            <div class="module">
+                <div class="form inline-row">
+                    <input id="cotAnio" placeholder="Anio (ej: 2026)" data-tippy-content="Ano comercial de la cotizacion.">
+                    <input id="cotMes" placeholder="Mes (ej: Mayo)" data-tippy-content="Mes comercial de la cotizacion.">
+                    <select id="cotLead" data-tippy-content="Selecciona el lead base para autocompletar datos."></select>
+                    <input id="cotDirigido" placeholder="Dirigido a" data-tippy-content="Persona o area a la que va dirigida la propuesta.">
+                    <input id="cotFecha" type="date" placeholder="Fecha de cotizacion" data-tippy-content="Fecha de emision de la cotizacion.">
+                    <input id="cotCliente" placeholder="Cliente" data-tippy-content="Nombre del cliente o organizacion receptora.">
+                    <input id="cotProducto" placeholder="Producto" data-tippy-content="Producto, linea o solucion cotizada.">
+                    <input id="cotServicioNombre" placeholder="Nombre del servicio" data-tippy-content="Servicio principal de la propuesta.">
+                    <input id="cotMonto" type="number" step="0.01" placeholder="Monto" data-tippy-content="Importe total de la propuesta.">
+                    <input id="cotMoneda" placeholder="Moneda (PEN, USD)" data-tippy-content="Moneda usada en el monto.">
+                    <input id="cotEstado" placeholder="Estado del proceso" data-tippy-content="Estado de la cotizacion: enviada, aprobada, observada, etc.">
+                    <input id="cotRemitente" placeholder="Remitente" data-tippy-content="Persona o area que envia la propuesta.">
+                    <input id="cotTipoOrg" placeholder="Tipo de organizacion" data-tippy-content="Tipo de la organizacion del lead.">
+                    <input id="cotTamanoOrg" placeholder="Tamano de organizacion" data-tippy-content="Tamano de la organizacion del lead.">
+                    <input id="cotSectorOrg" placeholder="Sector de organizacion" data-tippy-content="Sector de la organizacion del lead.">
+                    <input id="cotAlianzasOrg" placeholder="Alianzas" data-tippy-content="Alianzas relevantes de la organizacion.">
+                    <input id="cotActividadesOrg" placeholder="Actividades de la organizacion" data-tippy-content="Actividades principales o proyectos de la organizacion.">
+                    <input id="cotDepartamentoOrg" placeholder="Departamento" data-tippy-content="Departamento de la organizacion.">
+                    <input id="cotLinkedinOrg" placeholder="LinkedIn" data-tippy-content="Referencia de LinkedIn de la organizacion.">
+                    <input id="cotObservacion" placeholder="Observacion" data-tippy-content="Notas adicionales sobre la cotizacion.">
+                    <input id="cotLink" placeholder="Link de propuesta" data-tippy-content="Enlace al documento o propuesta compartida.">
+                </div>
+                <button onclick="addCotizacion()">Agregar cotizacion</button>
+                <div id="cotMsg" class="status-msg muted">Selecciona un lead para autocompletar dirigido a, cliente, servicio y remitente.</div>
+            </div>
+
+            <div class="list-card">
+                <div class="list-header">
+                    <h3>Listado de cotizaciones</h3>
+                    <div class="list-header-actions">
+                        <span id="cotListMeta" class="list-meta">0 resultados</span>
+                            <button id="exportCotBtn" class="export-btn" type="button" data-tippy-content="Descarga la tabla de cotizaciones filtrada en CSV para Excel.">Exportar CSV</button>
+                    </div>
+                </div>
+                <input id="cotSearch" class="list-search" placeholder="Buscar por ID lead, cliente, servicio, estado o remitente" data-tippy-content="Filtra cotizaciones por lead, cliente, servicio, remitente, estado o contexto de organizacion.">
+
+                <div class="table-wrap">
+                    <table class="master-table">
+                        <thead>
+                            <tr>
+                                <th>Anio</th>
+                                <th>Mes</th>
+                                <th>ID de lead</th>
+                                <th># Cotizacion</th>
+                                <th>Dirigido a</th>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Producto</th>
+                                <th>Servicio</th>
+                                <th>Monto</th>
+                                <th>Moneda</th>
+                                <th>Estado</th>
+                                <th>Remitente</th>
+                                <th>Tipo org</th>
+                                <th>Tamano org</th>
+                                <th>Sector org</th>
+                                <th>Alianzas</th>
+                                <th>Actividades org</th>
+                                <th>Departamento</th>
+                                <th>LinkedIn</th>
+                                <th>Observacion</th>
+                                <th>Link de propuesta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cotTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="pager">
+                    <button id="cotPrev" type="button" data-tippy-content="Ir a la pagina anterior del listado de cotizaciones.">Anterior</button>
+                    <span id="cotPageLabel" class="list-meta">Pagina 1</span>
+                    <button id="cotNext" type="button" data-tippy-content="Ir a la pagina siguiente del listado de cotizaciones.">Siguiente</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="section-base" class="app-section">
+            <div class="module">
+                <h3>Base maestra de datos</h3>
+                <small>Consulta rapida para crecer a miles de registros sin perder control.</small>
+            </div>
+
+            <div class="master-grid">
+                <div class="list-card">
+                    <div class="list-header">
+                        <h3>Organizaciones</h3>
+                        <div class="list-header-actions">
+                            <span id="orgListMeta" class="list-meta">0 resultados</span>
+                            <button id="exportOrgBtn" class="export-btn" type="button" data-tippy-content="Descarga la tabla de organizaciones filtrada en CSV.">Exportar CSV</button>
+                        </div>
+                    </div>
+                    <input id="orgSearch" class="list-search" placeholder="Buscar por RUC, nombre, sector o ubicacion" data-tippy-content="Busca por RUC, nombre, sector, departamento, LinkedIn o ubicacion.">
+
+                    <div class="table-wrap">
+                        <table class="master-table">
+                            <thead>
+                                <tr>
+                                    <th>RUC</th>
+                                    <th>Organizacion</th>
+                                    <th>Nombre completo</th>
+                                    <th>Contacto vigente</th>
+                                    <th>Tipo</th>
+                                    <th>Tamano</th>
+                                    <th>Sector</th>
+                                    <th>Ubicacion</th>
+                                    <th>Alianzas</th>
+                                    <th>Actividades</th>
+                                    <th>Departamento</th>
+                                    <th>LinkedIn</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orgTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pager">
+                        <button id="orgPrev" type="button" data-tippy-content="Ir a la pagina anterior de organizaciones.">Anterior</button>
+                        <span id="orgPageLabel" class="list-meta">Pagina 1</span>
+                        <button id="orgNext" type="button" data-tippy-content="Ir a la pagina siguiente de organizaciones.">Siguiente</button>
+                    </div>
+                </div>
+
+                <div class="list-card">
+                    <div class="list-header">
+                        <h3>Contactos</h3>
+                        <div class="list-header-actions">
+                            <span id="conListMeta" class="list-meta">0 resultados</span>
+                            <button id="exportConBtn" class="export-btn" type="button" data-tippy-content="Descarga la tabla de contactos filtrada en CSV.">Exportar CSV</button>
+                        </div>
+                    </div>
+                            <input id="conSearch" class="list-search" placeholder="Buscar por codigo, nombre, correo, cargo u organizacion" data-tippy-content="Busca por codigo individual, nombres, apellidos, correo, cargo, comentarios o datos de la organizacion.">
+
+                    <div class="table-wrap">
+                        <table class="master-table">
+                            <thead>
+                                <tr>
+                                    <th>Codigo</th>
+                                            <th>Vocativo</th>
+                                            <th>Nombres</th>
+                                            <th>Apellidos</th>
+                                            <th>Correo 1</th>
+                                            <th>Correo 2</th>
+                                            <th>Telefono</th>
+                                            <th>Cargo</th>
+                                            <th>Comentarios</th>
+                                    <th>Organizacion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="conTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pager">
+                        <button id="conPrev" type="button" data-tippy-content="Ir a la pagina anterior de contactos.">Anterior</button>
+                        <span id="conPageLabel" class="list-meta">Pagina 1</span>
+                        <button id="conNext" type="button" data-tippy-content="Ir a la pagina siguiente de contactos.">Siguiente</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- PANEL -->
+<div id="backdrop" class="backdrop" onclick="closePanel()"></div>
+<div id="panel" class="panel">
+    <div class="panel-header">
+        <h2 class="panel-title">Detalle del lead</h2>
+        <button class="panel-close" type="button" onclick="closePanel()">×</button>
+    </div>
+    <h3 id="pNombre"></h3>
+    <p id="pEmpresa"></p>
+    <div class="lead-meta" id="pMeta"></div>
+
+    <label class="label-with-info">
+        <span>Canal de captacion</span>
+        <button class="info-dot" type="button" data-tippy-content="Origen del lead: referido, evento, LinkedIn, prospeccion directa, etc.">i</button>
+    </label>
+    <input id="pCanal" onchange="saveLeadContext()">
+
+    <label class="label-with-info">
+        <span>Fecha de creacion</span>
+        <button class="info-dot" type="button" data-tippy-content="Fecha en que se creo o valido el lead en el pipeline.">i</button>
+    </label>
+    <input id="pCreacion" type="date" onchange="saveLeadContext()">
+
+    <label class="label-with-info">
+        <span>Fecha de proxima actividad</span>
+        <button class="info-dot" type="button" data-tippy-content="Fecha en la que debe dispararse el siguiente seguimiento.">i</button>
+    </label>
+    <input id="pNextDate" type="date" onchange="saveLeadContext()">
+
+    <label class="label-with-info">
+        <span>Fecha de cierre</span>
+        <button class="info-dot" type="button" data-tippy-content="Fecha final si el lead se cierra ganado o perdido.">i</button>
+    </label>
+    <input id="pCloseDate" type="date" onchange="saveLeadContext()">
+
+    <label class="label-with-info">
+        <span>Desafio u oportunidad</span>
+        <button class="info-dot" type="button" data-tippy-content="Problema, oportunidad o motivo de negocio que explica el lead.">i</button>
+    </label>
+    <textarea id="pChallenge" onchange="saveLeadContext()" placeholder="Ejemplo: Necesita formulacion para concurso y apoyo para carta de compromiso."></textarea>
+
+    <label>Estado</label>
+    <select id="pEstado" onchange="updateEstado()" data-tippy-content="Cambia el estado operativo del lead dentro del pipeline.">
+        <option value="nuevo">Nuevo</option>
+        <option value="proceso">Proceso</option>
+        <option value="propuesta">Propuesta</option>
+        <option value="cerrado">Cerrado</option>
+    </select>
+
+    <label class="label-with-info">
+        <span>Siguiente accion (por hacer)</span>
+        <button class="info-dot" type="button" data-tippy-content="Describe la siguiente accion concreta: que se hara, con quien y cuando.">i</button>
+    </label>
+    <input id="pNext" onchange="saveNext()" data-tippy-content="Siguiente accion concreta que sigue pendiente por hacer.">
+    <div class="field-help">Aqui va lo pendiente. Ejemplo: Llamar a Ana Ruiz el martes 10:00 para validar alcance y presupuesto.</div>
+
+    <label class="label-with-info">
+        <span>Historial del lead (lo que ya sabemos)</span>
+        <button class="info-dot" type="button" data-tippy-content="Resumen vivo del contexto: necesidad del cliente, dolor, decisiones, objeciones y acuerdos.">i</button>
+    </label>
+    <textarea id="pHistorial" onchange="saveHistorialLead()" placeholder="Ejemplo: Cliente necesita formulacion para fondo concursable. Presupuesto estimado 10k-15k. Se envio brochure y pidió reunion con gerencia." data-tippy-content="Resumen del contexto, acuerdos, objeciones, dolor y conocimiento acumulado del lead."></textarea>
+    <div class="field-help">Este campo es un resumen de conocimiento del lead, no una accion puntual.</div>
+
+    <h3>Actividades</h3>
+    <div id="actividades"></div>
+
+    <div class="panel-inline-actions">
+        <button id="exportLeadDetailBtn" class="export-btn" type="button" data-tippy-content="Descarga el detalle completo del lead actual con sus actividades.">Exportar este lead (CSV)</button>
+    </div>
+
+    <label class="label-with-info">
+        <span>Registro de actividad realizada</span>
+        <button class="info-dot" type="button" data-tippy-content="Registra lo que ya paso: accion realizada, resultado y proximo paso.">i</button>
+    </label>
+    <div class="quick-actions">
+        <button type="button" class="quick-note" data-template="Llamada realizada: ">Llamada</button>
+        <button type="button" class="quick-note" data-template="Correo enviado: ">Correo</button>
+        <button type="button" class="quick-note" data-template="Reunion realizada: ">Reunion</button>
+        <button type="button" class="quick-note" data-template="Seguimiento: ">Seguimiento</button>
+    </div>
+    <textarea id="nuevaAct" placeholder="Que se hizo, que resultado hubo y cual es el siguiente paso" data-tippy-content="Registra una actividad ya realizada, no la siguiente accion pendiente."></textarea>
+    <button onclick="addActivity()">Agregar</button>
+</div>
+
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+<script>
+const STORAGE_KEY = "bioactiva_crm_v2";
+const SIDEBAR_PREF_KEY = "bioactiva_sidebar_pref_v1";
+const initialState = {
+    organizaciones: [],
+    contactos: [],
+    leads: [],
+    cotizaciones: []
+};
+
+const demoState = {
+    organizaciones: [
+        {
+            id: "ORG-ALTOMAYO",
+            ruc: "20404057805",
+            nombre: "Altomayo",
+            nombreCompleto: "Cooperativa Agraria Cafetalera Altomayo",
+            contactoVigente: "Contacto activo",
+            tipoOrganizacion: "Cooperativa",
+            tamano: "Grande",
+            sector: "Agricola",
+            ubicacion: "San Martin",
+            alianzas: "Biocomercio Peru",
+            actividades: "Produccion de cafe para exportacion",
+            departamento: "San Martin",
+            linkedin: "linkedin.com/company/altomayo"
+        },
+        {
+            id: "ORG-CACAO-AROMA",
+            ruc: "20498765432",
+            nombre: "Cacao de Aroma",
+            nombreCompleto: "Cacao de Aroma EIRL",
+            contactoVigente: "Contacto activo",
+            tipoOrganizacion: "Empresa nacional",
+            tamano: "Pequena",
+            sector: "Agricola",
+            ubicacion: "Amazonas",
+            alianzas: "Biocomercio Peru",
+            actividades: "Produccion de cacao fino de aroma para exportacion",
+            departamento: "Amazonas",
+            linkedin: ""
+        },
+        {
+            id: "ORG-PROM-MIRAFLORES",
+            ruc: "20301456789",
+            nombre: "Prom. Miraflores",
+            nombreCompleto: "Promotora Inmobiliaria Miraflores SA",
+            contactoVigente: "Contacto activo",
+            tipoOrganizacion: "Empresa nacional",
+            tamano: "Mediana",
+            sector: "Inmobiliario",
+            ubicacion: "Lima",
+            alianzas: "",
+            actividades: "Desarrollo de proyectos inmobiliarios residenciales",
+            departamento: "Lima",
+            linkedin: "linkedin.com/company/promotora-miraflores"
+        },
+        {
+            id: "ORG-ALTIPLANO",
+            ruc: "20512384601",
+            nombre: "Altiplano",
+            nombreCompleto: "Altiplano Inversiones SAC",
+            contactoVigente: "Contacto activo",
+            tipoOrganizacion: "Empresa nacional",
+            tamano: "Mediana",
+            sector: "Inversiones",
+            ubicacion: "La Libertad",
+            alianzas: "",
+            actividades: "Proyectos agroindustriales con componente I+D",
+            departamento: "La Libertad",
+            linkedin: ""
+        },
+        {
+            id: "ORG-FINDESARROLLO",
+            ruc: "20100116392",
+            nombre: "Findesarrollo",
+            nombreCompleto: "Corporacion Nacional de Financiamiento al Desarrollo",
+            contactoVigente: "Contacto activo",
+            tipoOrganizacion: "Empresa publica",
+            tamano: "Grande",
+            sector: "Financiero",
+            ubicacion: "Lima",
+            alianzas: "BID, CAF",
+            actividades: "Financiamiento de proyectos y banca de segundo piso",
+            departamento: "Lima",
+            linkedin: "linkedin.com/company/cofide-peru"
+        },
+        {
+            id: "ORG-AGROFUTURO",
+            ruc: "20567891234",
+            nombre: "AgroFuturo",
+            nombreCompleto: "AgroFuturo Consultores SAC",
+            contactoVigente: "Contacto activo",
+            tipoOrganizacion: "Empresa nacional",
+            tamano: "Pequena",
+            sector: "Consultoria",
+            ubicacion: "Cusco",
+            alianzas: "",
+            actividades: "Consultoria en gestion agricola y financiamiento",
+            departamento: "Cusco",
+            linkedin: ""
+        },
+        {
+            id: "ORG-INKAFARM",
+            ruc: "20602345678",
+            nombre: "Inkafarm",
+            nombreCompleto: "Inkafarm Sociedad Agricola SAC",
+            contactoVigente: "Contacto activo",
+            tipoOrganizacion: "Empresa nacional",
+            tamano: "Pequena",
+            sector: "Agricola",
+            ubicacion: "Puno",
+            alianzas: "",
+            actividades: "Produccion de superalimentos para exportacion",
+            departamento: "Puno",
+            linkedin: ""
+        },
+        {
+            id: "ORG-UNIAM",
+            ruc: "20527890123",
+            nombre: "UNIAM",
+            nombreCompleto: "Universidad Nacional Intercultural de la Amazonia",
+            contactoVigente: "Contacto activo",
+            tipoOrganizacion: "Universidad publica",
+            tamano: "Mediana",
+            sector: "Educacion",
+            ubicacion: "Loreto",
+            alianzas: "SUNEDU, CONCYTEC",
+            actividades: "Formacion profesional e investigacion en la amazonia",
+            departamento: "Loreto",
+            linkedin: "linkedin.com/company/unaaa"
+        },
+        {
+            id: "ORG-NATURANDINA",
+            ruc: "20612345678",
+            nombre: "NaturAndina",
+            nombreCompleto: "NaturAndina Export EIRL",
+            contactoVigente: "Contacto activo",
+            tipoOrganizacion: "Empresa nacional",
+            tamano: "Pequena",
+            sector: "Agricola",
+            ubicacion: "Arequipa",
+            alianzas: "Biocomercio Peru",
+            actividades: "Exportacion de plantas medicinales y productos andinos",
+            departamento: "Arequipa",
+            linkedin: ""
+        },
+        {
+            id: "ORG-CAMARA-JAEN",
+            ruc: "20487654321",
+            nombre: "Camara Jaen",
+            nombreCompleto: "Camara de Comercio y Produccion de Jaen",
+            contactoVigente: "Contacto activo",
+            tipoOrganizacion: "Gremio",
+            tamano: "Pequena",
+            sector: "Comercio",
+            ubicacion: "Cajamarca",
+            alianzas: "CCL, SNI",
+            actividades: "Representacion empresarial y comercio local",
+            departamento: "Cajamarca",
+            linkedin: "linkedin.com/company/camara-jaen"
+        }
+    ],
+    contactos: [
+        {
+            id: "CON-ID00001",
+            codigoIndividual: "ID00001",
+            vocativo: "Sr.",
+            nombres: "Segundo Gonzalo",
+            apellidos: "Rios Nunez",
+            nombre: "Segundo Gonzalo Rios Nunez",
+            nombreCompleto: "Segundo Gonzalo Rios Nunez",
+            correo: "gerencia@acopagro.com.pe",
+            correo2: "",
+            telefono: "942 111 001",
+            cargo: "Gerente General",
+            comentarios: "Contacto clave para proyectos de certificacion organica",
+            orgId: "ORG-ALTOMAYO"
+        },
+        {
+            id: "CON-ID00006",
+            codigoIndividual: "ID00006",
+            vocativo: "Sra.",
+            nombres: "Lucia",
+            apellidos: "Ramirez Diaz",
+            nombre: "Lucia Ramirez Diaz",
+            nombreCompleto: "Lucia Ramirez Diaz",
+            correo: "lucia@cacaodearoma.pe",
+            correo2: "luciaramirez.cacao@gmail.com",
+            telefono: "945 333 006",
+            cargo: "Gerente General",
+            comentarios: "Productora comprometida con certificacion de origen",
+            orgId: "ORG-CACAO-AROMA"
+        },
+        {
+            id: "CON-ID00017",
+            codigoIndividual: "ID00017",
+            vocativo: "Sr.",
+            nombres: "Cesar",
+            apellidos: "Lozano Bravo",
+            nombre: "Cesar Lozano Bravo",
+            nombreCompleto: "Cesar Lozano Bravo",
+            correo: "clozano@prommiraflores.pe",
+            correo2: "",
+            telefono: "01 241 5500",
+            cargo: "Gerente General",
+            comentarios: "Evaluo proyecto de beneficios tributarios en 2025",
+            orgId: "ORG-PROM-MIRAFLORES"
+        },
+        {
+            id: "CON-ID00003",
+            codigoIndividual: "ID00003",
+            vocativo: "Sr.",
+            nombres: "Jorge Luis",
+            apellidos: "Vidal Castillo",
+            nombre: "Jorge Luis Vidal Castillo",
+            nombreCompleto: "Jorge Luis Vidal Castillo",
+            correo: "jvidal@menorca.pe",
+            correo2: "j.vidal.castillo@gmail.com",
+            telefono: "944 222 003",
+            cargo: "Director Comercial",
+            comentarios: "Exploro propuesta de formulacion de proyecto en 2024",
+            orgId: "ORG-ALTIPLANO"
+        },
+        {
+            id: "CON-ID00014",
+            codigoIndividual: "ID00014",
+            vocativo: "Sra.",
+            nombres: "Ana Mujica",
+            apellidos: "Herrera",
+            nombre: "Ana Mujica Herrera",
+            nombreCompleto: "Ana Mujica Herrera",
+            correo: "amujica@cofide.com.pe",
+            correo2: "",
+            telefono: "01 615 0404",
+            cargo: "Analista Senior",
+            comentarios: "Evaluo linea de credito para proyecto Innovasuyu",
+            orgId: "ORG-FINDESARROLLO"
+        },
+        {
+            id: "CON-ID00009",
+            codigoIndividual: "ID00009",
+            vocativo: "Sr.",
+            nombres: "Andres",
+            apellidos: "Paredes Lobo",
+            nombre: "Andres Paredes Lobo",
+            nombreCompleto: "Andres Paredes Lobo",
+            correo: "aparedes@agrofuturo.pe",
+            correo2: "andres.paredes@gmail.com",
+            telefono: "984 444 009",
+            cargo: "Socio Fundador",
+            comentarios: "Posible aliado en proyectos de financiamiento agrario",
+            orgId: "ORG-AGROFUTURO"
+        },
+        {
+            id: "CON-ID00013",
+            codigoIndividual: "ID00013",
+            vocativo: "Sr.",
+            nombres: "Tomas",
+            apellidos: "Huaman Ccori",
+            nombre: "Tomas Huaman Ccori",
+            nombreCompleto: "Tomas Huaman Ccori",
+            correo: "tomas@inkafarm.pe",
+            correo2: "tomas.huaman.ccori@gmail.com",
+            telefono: "952 555 013",
+            cargo: "Gerente General",
+            comentarios: "Productor de quinua y kiwicha certificada",
+            orgId: "ORG-INKAFARM"
+        },
+        {
+            id: "CON-ID00016",
+            codigoIndividual: "ID00016",
+            vocativo: "Sra.",
+            nombres: "Elena Soto",
+            apellidos: "Grandez",
+            nombre: "Elena Soto Grandez",
+            nombreCompleto: "Elena Soto Grandez",
+            correo: "esoto@unaaa.edu.pe",
+            correo2: "",
+            telefono: "065 46 2200",
+            cargo: "Rectora",
+            comentarios: "Interes en convenio de cooperacion academica",
+            orgId: "ORG-UNIAM"
+        },
+        {
+            id: "CON-ID00019",
+            codigoIndividual: "ID00019",
+            vocativo: "Sra.",
+            nombres: "Milagros",
+            apellidos: "Condori Huanca",
+            nombre: "Milagros Condori Huanca",
+            nombreCompleto: "Milagros Condori Huanca",
+            correo: "mcondori@naturandina.pe",
+            correo2: "",
+            telefono: "965 666 015",
+            cargo: "Directora de Operaciones",
+            comentarios: "Contacto activo en red de conservacion amazonica",
+            orgId: "ORG-NATURANDINA"
+        },
+        {
+            id: "CON-ID00020",
+            codigoIndividual: "ID00020",
+            vocativo: "Sr.",
+            nombres: "Hugo",
+            apellidos: "Cubas Delgado",
+            nombre: "Hugo Cubas Delgado",
+            nombreCompleto: "Hugo Cubas Delgado",
+            correo: "hcubas@camarajaen.org.pe",
+            correo2: "",
+            telefono: "01 431 7700",
+            cargo: "Secretario General",
+            comentarios: "Contacto gremial clave para movilizacion del sector",
+            orgId: "ORG-CAMARA-JAEN"
+        }
+    ],
+    leads: [
+        {
+            id: "LEAD-2024-001",
+            contactoId: "CON-ID00001",
+            orgId: "ORG-ALTOMAYO",
+            codigoIndividual: "ID00001",
+            nombre: "Segundo Gonzalo Rios Nunez",
+            empresa: "Altomayo",
+            correo: "gerencia@acopagro.com.pe",
+            tipoOrg: "Cooperativa",
+            sectorOrg: "Agricola",
+            canal: "Referido",
+            creacion: "2024-03-10",
+            nextDate: "",
+            closeDate: "2024-05-20",
+            challenge: "Acceder a fondos concursables para modernizar procesamiento de cafe.",
+            servicio: "Formulacion de proyecto Innovasuyu",
+            encargado: "Karien Diaz",
+            estado: "cerrado",
+            next: "",
+            historial: "Mar-24 reunion inicial. Abr-24 envio de propuesta. May-24 aprobacion y firma.",
+            actividades: [
+                { txt: "Proyecto aprobado en convocatoria.", fecha: "20/05/2024" }
+            ]
+        },
+        {
+            id: "LEAD-2024-002",
+            contactoId: "CON-ID00006",
+            orgId: "ORG-CACAO-AROMA",
+            codigoIndividual: "ID00006",
+            nombre: "Lucia Ramirez Diaz",
+            empresa: "Cacao de Aroma",
+            correo: "lucia@cacaodearoma.pe",
+            tipoOrg: "Empresa nacional",
+            sectorOrg: "Agricola",
+            canal: "Evento presencial",
+            creacion: "2024-04-05",
+            nextDate: "",
+            closeDate: "2024-06-15",
+            challenge: "Fortalecer cadena de valor y acceso a mercados de cacao fino.",
+            servicio: "Formulacion de proyecto Innovasuyu",
+            encargado: "Administracion",
+            estado: "cerrado",
+            next: "",
+            historial: "Abr-24 contacto en feria. May-24 diagnostico. Jun-24 formulacion y presentacion.",
+            actividades: [
+                { txt: "Propuesta aceptada por cliente.", fecha: "15/06/2024" }
+            ]
+        },
+        {
+            id: "LEAD-2024-003",
+            contactoId: "CON-ID00017",
+            orgId: "ORG-PROM-MIRAFLORES",
+            codigoIndividual: "ID00017",
+            nombre: "Cesar Lozano Bravo",
+            empresa: "Prom. Miraflores",
+            correo: "clozano@prommiraflores.pe",
+            tipoOrg: "Empresa nacional",
+            sectorOrg: "Inmobiliario",
+            canal: "Prospeccion directa",
+            creacion: "2024-08-12",
+            nextDate: "",
+            closeDate: "2024-10-08",
+            challenge: "Acceder a beneficios de la Ley 30309 para I+D.",
+            servicio: "Formulacion de proyecto para beneficios tributarios",
+            encargado: "Karien Diaz",
+            estado: "cerrado",
+            next: "",
+            historial: "Ago-24 reunion gerencial. Sep-24 levantamiento de informacion. Oct-24 entrega.",
+            actividades: [
+                { txt: "Servicio entregado y cierre ganado.", fecha: "08/10/2024" }
+            ]
+        },
+        {
+            id: "LEAD-2024-004",
+            contactoId: "CON-ID00003",
+            orgId: "ORG-ALTIPLANO",
+            codigoIndividual: "ID00003",
+            nombre: "Jorge Luis Vidal Castillo",
+            empresa: "Altiplano",
+            correo: "jvidal@menorca.pe",
+            tipoOrg: "Empresa nacional",
+            sectorOrg: "Inversiones",
+            canal: "Referido",
+            creacion: "2024-09-01",
+            nextDate: "",
+            closeDate: "2024-11-03",
+            challenge: "Diversificar inversiones hacia agroindustria con soporte de I+D.",
+            servicio: "Formulacion de proyecto Innovasuyu",
+            encargado: "Administracion",
+            estado: "cerrado",
+            next: "",
+            historial: "Sep-24 reunion. Oct-24 propuesta tecnica. Nov-24 contrato firmado.",
+            actividades: [
+                { txt: "Contrato firmado y proyecto cerrado ganado.", fecha: "03/11/2024" }
+            ]
+        },
+        {
+            id: "LEAD-2024-005",
+            contactoId: "CON-ID00014",
+            orgId: "ORG-FINDESARROLLO",
+            codigoIndividual: "ID00014",
+            nombre: "Ana Mujica Herrera",
+            empresa: "Findesarrollo",
+            correo: "amujica@cofide.com.pe",
+            tipoOrg: "Empresa publica",
+            sectorOrg: "Financiero",
+            canal: "Evento presencial",
+            creacion: "2024-06-20",
+            nextDate: "",
+            closeDate: "2024-08-30",
+            challenge: "Mejorar tasa de exito de proyectos en cartera.",
+            servicio: "Consultoria en gestion de portafolio",
+            encargado: "Karien Diaz",
+            estado: "cerrado",
+            next: "",
+            historial: "Jun-24 reunion exploratoria. Jul-24 propuesta. Ago-24 no continuo.",
+            actividades: [
+                { txt: "Proceso cerrado perdido por decision interna del cliente.", fecha: "30/08/2024" }
+            ]
+        },
+        {
+            id: "LEAD-2025-001",
+            contactoId: "CON-ID00009",
+            orgId: "ORG-AGROFUTURO",
+            codigoIndividual: "ID00009",
+            nombre: "Andres Paredes Lobo",
+            empresa: "AgroFuturo",
+            correo: "aparedes@agrofuturo.pe",
+            tipoOrg: "Empresa nacional",
+            sectorOrg: "Consultoria",
+            canal: "Red profesional",
+            creacion: "2025-01-15",
+            nextDate: "2025-05-10",
+            closeDate: "",
+            challenge: "Ampliar cobertura geografica de BioActiva en regiones andinas.",
+            servicio: "Alianza estrategica / co-ejecucion",
+            encargado: "Karien Diaz",
+            estado: "proceso",
+            next: "Definir terminos de alianza",
+            historial: "Ene-25 llamada exploratoria. Feb-25 reunion virtual. Mar-25 propuesta.",
+            actividades: []
+        },
+        {
+            id: "LEAD-2025-002",
+            contactoId: "CON-ID00013",
+            orgId: "ORG-INKAFARM",
+            codigoIndividual: "ID00013",
+            nombre: "Tomas Huaman Ccori",
+            empresa: "Inkafarm",
+            correo: "tomas@inkafarm.pe",
+            tipoOrg: "Empresa nacional",
+            sectorOrg: "Agricola",
+            canal: "Referido",
+            creacion: "2025-02-03",
+            nextDate: "2025-05-20",
+            closeDate: "",
+            challenge: "Acceder a convocatoria PNIA para mejora genetica de quinua.",
+            servicio: "Formulacion de proyecto Innovasuyu",
+            encargado: "Administracion",
+            estado: "proceso",
+            next: "Completar perfil de proyecto",
+            historial: "Feb-25 contacto por referido. Mar-25 diagnostico tecnico. Abr-25 revision.",
+            actividades: []
+        },
+        {
+            id: "LEAD-2025-003",
+            contactoId: "CON-ID00016",
+            orgId: "ORG-UNIAM",
+            codigoIndividual: "ID00016",
+            nombre: "Elena Soto Grandez",
+            empresa: "UNIAM",
+            correo: "esoto@unaaa.edu.pe",
+            tipoOrg: "Universidad publica",
+            sectorOrg: "Educacion",
+            canal: "Evento presencial",
+            creacion: "2025-03-08",
+            nextDate: "2025-05-28",
+            closeDate: "",
+            challenge: "Desarrollar modulo de emprendimiento rural para estudiantes.",
+            servicio: "Diseno de programa de capacitacion",
+            encargado: "Karien Diaz",
+            estado: "proceso",
+            next: "Validar propuesta con decanos",
+            historial: "Mar-25 reunion con rectorado. Abr-25 presentacion de propuesta academica.",
+            actividades: []
+        },
+        {
+            id: "LEAD-2025-004",
+            contactoId: "CON-ID00019",
+            orgId: "ORG-NATURANDINA",
+            codigoIndividual: "ID00019",
+            nombre: "Milagros Condori Huanca",
+            empresa: "NaturAndina",
+            correo: "mcondori@naturandina.pe",
+            tipoOrg: "Empresa nacional",
+            sectorOrg: "Agricola",
+            canal: "LinkedIn",
+            creacion: "2025-04-02",
+            nextDate: "2025-05-15",
+            closeDate: "",
+            challenge: "Cumplir requisitos de trazabilidad para mercado europeo.",
+            servicio: "Formulacion de proyecto Innovasuyu",
+            encargado: "Administracion",
+            estado: "nuevo",
+            next: "Primera reunion de diagnostico",
+            historial: "Abr-25 primer contacto via LinkedIn.",
+            actividades: []
+        },
+        {
+            id: "LEAD-2025-005",
+            contactoId: "CON-ID00020",
+            orgId: "ORG-CAMARA-JAEN",
+            codigoIndividual: "ID00020",
+            nombre: "Hugo Cubas Delgado",
+            empresa: "Camara Jaen",
+            correo: "hcubas@camarajaen.org.pe",
+            tipoOrg: "Gremio",
+            sectorOrg: "Comercio",
+            canal: "Evento presencial",
+            creacion: "2025-04-14",
+            nextDate: "2025-05-07",
+            closeDate: "",
+            challenge: "Elevar capacidades de gestion en pequenos empresarios.",
+            servicio: "Taller de fortalecimiento empresarial",
+            encargado: "Karien Diaz",
+            estado: "nuevo",
+            next: "Enviar propuesta de taller",
+            historial: "Abr-25 contacto en evento regional. Solicita propuesta de taller.",
+            actividades: []
+        }
+    ],
+    cotizaciones: [
+        {
+            id: "Q-202404-001",
+            anio: "2024",
+            mes: "Mayo",
+            leadId: "LEAD-2024-001",
+            cotId: "COT-2024-001",
+            dirigidoA: "Segundo Gonzalo Rios Nunez",
+            fecha: "2024-04-18",
+            cliente: "Altomayo",
+            producto: "Innovasuyu",
+            servicio: "Formulacion de proyecto para fondo concursable CONCYTEC",
+            monto: "12500",
+            moneda: "PEN",
+            estado: "Aceptada",
+            remitente: "Karien Diaz",
+            tipoOrganizacion: "Cooperativa",
+            tamanoOrganizacion: "Grande",
+            sectorOrganizacion: "Agricola",
+            alianzas: "Biocomercio Peru",
+            actividadesOrganizacion: "Produccion de cafe para exportacion",
+            departamento: "San Martin",
+            linkedin: "linkedin.com/company/altomayo",
+            observacion: "Proyecto aprobado en convocatoria. Cliente satisfecho.",
+            link: "https://drive.google.com/propuesta-altomayo-2024"
+        },
+        {
+            id: "Q-202405-002",
+            anio: "2024",
+            mes: "Junio",
+            leadId: "LEAD-2024-002",
+            cotId: "COT-2024-002",
+            dirigidoA: "Lucia Ramirez Diaz",
+            fecha: "2024-05-20",
+            cliente: "Cacao de Aroma",
+            producto: "Innovasuyu",
+            servicio: "Formulacion de proyecto para cadena de valor cacao fino",
+            monto: "9800",
+            moneda: "PEN",
+            estado: "Aceptada",
+            remitente: "Administracion",
+            tipoOrganizacion: "Empresa nacional",
+            tamanoOrganizacion: "Pequena",
+            sectorOrganizacion: "Agricola",
+            alianzas: "Biocomercio Peru",
+            actividadesOrganizacion: "Produccion de cacao fino de aroma para exportacion",
+            departamento: "Amazonas",
+            linkedin: "",
+            observacion: "Incluye diagnostico de cadena y perfil de proyecto.",
+            link: "https://drive.google.com/propuesta-cacaodearoma-2024"
+        },
+        {
+            id: "Q-202409-003",
+            anio: "2024",
+            mes: "Setiembre",
+            leadId: "LEAD-2024-003",
+            cotId: "COT-2024-003",
+            dirigidoA: "Cesar Lozano Bravo",
+            fecha: "2024-09-05",
+            cliente: "Prom. Miraflores",
+            producto: "Consultoria tributaria",
+            servicio: "Formulacion de proyecto para beneficios tributarios Ley 30309",
+            monto: "15000",
+            moneda: "PEN",
+            estado: "Aceptada",
+            remitente: "Karien Diaz",
+            tipoOrganizacion: "Empresa nacional",
+            tamanoOrganizacion: "Mediana",
+            sectorOrganizacion: "Inmobiliario",
+            alianzas: "",
+            actividadesOrganizacion: "Desarrollo de proyectos inmobiliarios residenciales",
+            departamento: "Lima",
+            linkedin: "linkedin.com/company/promotora-miraflores",
+            observacion: "Incluye levantamiento de gastos en I+D y expediente tecnico.",
+            link: "https://drive.google.com/propuesta-miraflores-2024"
+        },
+        {
+            id: "Q-202410-004",
+            anio: "2024",
+            mes: "Octubre",
+            leadId: "LEAD-2024-004",
+            cotId: "COT-2024-004",
+            dirigidoA: "Jorge Luis Vidal Castillo",
+            fecha: "2024-10-10",
+            cliente: "Altiplano",
+            producto: "Innovasuyu",
+            servicio: "Formulacion de proyecto agroindustrial con componente I+D",
+            monto: "18000",
+            moneda: "PEN",
+            estado: "Aceptada",
+            remitente: "Administracion",
+            tipoOrganizacion: "Empresa nacional",
+            tamanoOrganizacion: "Mediana",
+            sectorOrganizacion: "Inversiones",
+            alianzas: "",
+            actividadesOrganizacion: "Proyectos agroindustriales con componente I+D",
+            departamento: "La Libertad",
+            linkedin: "",
+            observacion: "Proyecto orientado a linea de financiamiento BID.",
+            link: "https://drive.google.com/propuesta-altiplano-2024"
+        },
+        {
+            id: "Q-202407-005",
+            anio: "2024",
+            mes: "Julio",
+            leadId: "LEAD-2024-005",
+            cotId: "COT-2024-005",
+            dirigidoA: "Ana Mujica Herrera",
+            fecha: "2024-07-08",
+            cliente: "Findesarrollo",
+            producto: "Consultoria",
+            servicio: "Consultoria en gestion y seguimiento de portafolio de proyectos",
+            monto: "22000",
+            moneda: "PEN",
+            estado: "Rechazada",
+            remitente: "Karien Diaz",
+            tipoOrganizacion: "Empresa publica",
+            tamanoOrganizacion: "Grande",
+            sectorOrganizacion: "Financiero",
+            alianzas: "BID, CAF",
+            actividadesOrganizacion: "Financiamiento de proyectos y banca de segundo piso",
+            departamento: "Lima",
+            linkedin: "linkedin.com/company/cofide-peru",
+            observacion: "Cliente opto por consultor interno. Dejar puerta abierta para 2025.",
+            link: "https://drive.google.com/propuesta-findesarrollo-2024"
+        }
+    ]
+};
+
+const demoCotizacionWizard = {
+    leadId: "LEAD-2024-001",
+    anio: "2024",
+    mes: "Mayo",
+    cotId: "COT-2024-001",
+    dirigidoA: "Segundo Gonzalo Rios Nunez",
+    fecha: "2024-04-18",
+    cliente: "Altomayo",
+    producto: "Innovasuyu",
+    servicio: "Formulacion de proyecto para fondo concursable CONCYTEC",
+    monto: "12500",
+    moneda: "PEN",
+    estado: "Aceptada",
+    remitente: "Karien Diaz",
+    tipoOrganizacion: "Cooperativa",
+    tamanoOrganizacion: "Pequena",
+    sectorOrganizacion: "Agricola",
+    alianzas: "Red de productores aliados",
+    actividadesOrganizacion: "Produccion y comercializacion de cafe especialidad",
+    departamento: "San Martin",
+    linkedin: "https://www.linkedin.com/company/altomayo",
+    observacion: "Proyecto aprobado en convocatoria. Cliente satisfecho.",
+    link: "https://drive.google.com/propuesta-altomayo-2024"
+};
+
+let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || initialState;
+if(!Array.isArray(state.organizaciones)) state.organizaciones = [];
+if(!Array.isArray(state.contactos)) state.contactos = [];
+if(!Array.isArray(state.leads)) state.leads = [];
+if(!Array.isArray(state.cotizaciones)) state.cotizaciones = [];
+if(state.organizaciones.length === 0 && state.contactos.length === 0 && state.leads.length === 0 && state.cotizaciones.length === 0){
+    state = JSON.parse(JSON.stringify(demoState));
+}
+let {organizaciones, contactos, leads, cotizaciones} = state;
+let current = null;
+
+function synchronizeDataRelations(){
+    const norm = (value) => String(value || "").trim().toLowerCase();
+    const orgById = new Map(organizaciones.map(org => [org.id, org]));
+    const orgByRuc = new Map(organizaciones.map(org => [norm(org.ruc), org]));
+    const orgByName = new Map();
+
+    organizaciones.forEach(org => {
+        orgByName.set(norm(org.nombre), org);
+        orgByName.set(norm(org.nombreCompleto), org);
+    });
+
+    contactos = contactos.map(contacto => {
+        let org = orgById.get(contacto.orgId);
+        if(!org) org = orgByRuc.get(norm(contacto.orgRuc));
+        if(!org) org = orgByName.get(norm(contacto.orgAbrev));
+        if(!org) org = orgByName.get(norm(contacto.orgExtendido));
+
+        const nombreCompleto = (contacto.nombreCompleto || [contacto.nombres, contacto.apellidos].filter(Boolean).join(" ")).trim();
+        if(!org){
+            return {
+                ...contacto,
+                nombre: nombreCompleto,
+                nombreCompleto
+            };
+        }
+
+        return {
+            ...contacto,
+            nombre: nombreCompleto,
+            nombreCompleto,
+            orgId: org.id,
+            orgAbrev: org.nombre || "",
+            orgExtendido: org.nombreCompleto || org.nombre || "",
+            orgRuc: org.ruc || "",
+            orgTipo: org.tipoOrganizacion || "",
+            orgTamano: org.tamano || "",
+            orgSector: org.sector || "",
+            orgDepartamento: org.departamento || "",
+            orgUbicacion: org.ubicacion || ""
+        };
+    });
+
+    const contactById = new Map(contactos.map(contacto => [contacto.id, contacto]));
+    const contactByCode = new Map(contactos.map(contacto => [norm(contacto.codigoIndividual), contacto]));
+
+    leads = leads.map(lead => {
+        let contacto = contactById.get(lead.contactoId);
+        if(!contacto) contacto = contactByCode.get(norm(lead.codigoIndividual));
+
+        let org = orgById.get(lead.orgId);
+        if(!org && contacto) org = orgById.get(contacto.orgId);
+        if(!org) org = orgByName.get(norm(lead.empresa));
+
+        return {
+            ...lead,
+            contactoId: contacto?.id || lead.contactoId,
+            orgId: org?.id || lead.orgId,
+            codigoIndividual: contacto?.codigoIndividual || lead.codigoIndividual || "",
+            nombre: contacto?.nombreCompleto || lead.nombre,
+            empresa: org?.nombre || lead.empresa,
+            correo: contacto?.correo || lead.correo || "",
+            tipoOrg: org?.tipoOrganizacion || lead.tipoOrg || "",
+            sectorOrg: org?.sector || lead.sectorOrg || ""
+        };
+    });
+
+    const leadById = new Map(leads.map(lead => [lead.id, lead]));
+    cotizaciones = cotizaciones.map(cot => {
+        const lead = leadById.get(cot.leadId);
+        const org = lead ? orgById.get(lead.orgId) : null;
+
+        return {
+            ...cot,
+            dirigidoA: cot.dirigidoA || lead?.nombre || "",
+            cliente: cot.cliente || lead?.empresa || "",
+            servicio: cot.servicio || lead?.servicio || "",
+            remitente: cot.remitente || lead?.encargado || "",
+            tipoOrganizacion: cot.tipoOrganizacion || org?.tipoOrganizacion || "",
+            tamanoOrganizacion: cot.tamanoOrganizacion || org?.tamano || "",
+            sectorOrganizacion: cot.sectorOrganizacion || org?.sector || "",
+            alianzas: cot.alianzas || org?.alianzas || "",
+            actividadesOrganizacion: cot.actividadesOrganizacion || org?.actividades || "",
+            departamento: cot.departamento || org?.departamento || "",
+            linkedin: cot.linkedin || org?.linkedin || ""
+        };
+    });
+}
+
+synchronizeDataRelations();
+
+const panel = document.getElementById("panel");
+const backdrop = document.getElementById("backdrop");
+const pNombre = document.getElementById("pNombre");
+const pEmpresa = document.getElementById("pEmpresa");
+const pEstado = document.getElementById("pEstado");
+const pNext = document.getElementById("pNext");
+const pHistorial = document.getElementById("pHistorial");
+const actividades = document.getElementById("actividades");
+const nuevaAct = document.getElementById("nuevaAct");
+const total = document.getElementById("total");
+const procesoKpi = document.getElementById("proceso");
+const propuestaKpi = document.getElementById("propuesta");
+const cerradoKpi = document.getElementById("cerrado");
+const nuevoCol = document.getElementById("nuevo");
+const procesoCol = document.getElementById("procesoCol");
+const propuestaCol = document.getElementById("propuestaCol");
+const cerradoCol = document.getElementById("cerradoCol");
+const conOrg = document.getElementById("conOrg");
+const conCodigoIndividual = document.getElementById("conCodigoIndividual");
+const conVocativo = document.getElementById("conVocativo");
+const conNombres = document.getElementById("conNombres");
+const conApellidos = document.getElementById("conApellidos");
+const conNombreCompleto = document.getElementById("conNombreCompleto");
+const conCorreo2 = document.getElementById("conCorreo2");
+const conComentarios = document.getElementById("conComentarios");
+const conOrgAbrev = document.getElementById("conOrgAbrev");
+const conOrgExtendido = document.getElementById("conOrgExtendido");
+const conOrgRuc = document.getElementById("conOrgRuc");
+const conOrgTipo = document.getElementById("conOrgTipo");
+const conOrgTamano = document.getElementById("conOrgTamano");
+const conOrgSector = document.getElementById("conOrgSector");
+const conOrgDepartamento = document.getElementById("conOrgDepartamento");
+const conOrgUbicacion = document.getElementById("conOrgUbicacion");
+const leadContacto = document.getElementById("leadContacto");
+const leadCanal = document.getElementById("leadCanal");
+const leadFechaCreacion = document.getElementById("leadFechaCreacion");
+const leadFechaProxima = document.getElementById("leadFechaProxima");
+const orgMsg = document.getElementById("orgMsg");
+const conMsg = document.getElementById("conMsg");
+const leadMsg = document.getElementById("leadMsg");
+const sideOrg = document.getElementById("sideOrg");
+const sideContactos = document.getElementById("sideContactos");
+const sideLeads = document.getElementById("sideLeads");
+const sideCotizaciones = document.getElementById("sideCotizaciones");
+const guideStatus = document.getElementById("guideStatus");
+const reloadDemoBtn = document.getElementById("reloadDemoBtn");
+const guideLinks = [...document.querySelectorAll(".guide-link")];
+const appLayout = document.querySelector(".app-layout");
+const menuToggle = document.getElementById("menuToggle");
+const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+const orgSearch = document.getElementById("orgSearch");
+const conSearch = document.getElementById("conSearch");
+const orgTableBody = document.getElementById("orgTableBody");
+const conTableBody = document.getElementById("conTableBody");
+const orgListMeta = document.getElementById("orgListMeta");
+const conListMeta = document.getElementById("conListMeta");
+const orgPageLabel = document.getElementById("orgPageLabel");
+const conPageLabel = document.getElementById("conPageLabel");
+const orgPrev = document.getElementById("orgPrev");
+const orgNext = document.getElementById("orgNext");
+const conPrev = document.getElementById("conPrev");
+const conNext = document.getElementById("conNext");
+const cotLead = document.getElementById("cotLead");
+const cotMsg = document.getElementById("cotMsg");
+const cotSearch = document.getElementById("cotSearch");
+const cotTableBody = document.getElementById("cotTableBody");
+const cotListMeta = document.getElementById("cotListMeta");
+const cotPageLabel = document.getElementById("cotPageLabel");
+const cotPrev = document.getElementById("cotPrev");
+const cotNext = document.getElementById("cotNext");
+const quickNoteButtons = [...document.querySelectorAll(".quick-note")];
+const demoWizardBtn = document.getElementById("demoWizardBtn");
+const demoWizardMsg = document.getElementById("demoWizardMsg");
+const demoCotWizardBtn = document.getElementById("demoCotWizardBtn");
+const demoCotWizardMsg = document.getElementById("demoCotWizardMsg");
+const exportOrgBtn = document.getElementById("exportOrgBtn");
+const exportConBtn = document.getElementById("exportConBtn");
+const exportLeadsBtn = document.getElementById("exportLeadsBtn");
+const exportLeadDetailBtn = document.getElementById("exportLeadDetailBtn");
+const exportCotBtn = document.getElementById("exportCotBtn");
+const navButtons = [...document.querySelectorAll(".side-btn")];
+const sections = {
+    captura: document.getElementById("section-captura"),
+    cotizaciones: document.getElementById("section-cotizaciones"),
+    base: document.getElementById("section-base"),
+    pipeline: document.getElementById("section-pipeline")
+};
+const PAGE_SIZE = 12;
+let orgPage = 1;
+let conPage = 1;
+let cotPage = 1;
+let demoWizardStep = 0;
+let demoWizardDraft = null;
+let demoCaptureSequence = 1;
+
+function initInfoTooltips(){
+    if(window.tippy){
+        window.tippy("[data-tippy-content]", {
+            placement: "top",
+            theme: "light-border",
+            allowHTML: false,
+            delay: [120, 40]
+        });
+        return;
+    }
+
+    document.querySelectorAll("[data-tippy-content]").forEach(el => {
+        el.setAttribute("title", el.getAttribute("data-tippy-content") || "");
+    });
+}
+
+function isMobile(){
+    return window.matchMedia("(max-width: 900px)").matches;
+}
+
+function syncMenuExpanded(){
+    const expanded = isMobile()
+        ? appLayout.classList.contains("mobile-sidebar-open")
+        : !appLayout.classList.contains("desktop-sidebar-hidden");
+    menuToggle.setAttribute("aria-expanded", String(expanded));
+}
+
+function closeSidebar(){
+    appLayout.classList.remove("mobile-sidebar-open");
+    syncMenuExpanded();
+}
+
+function persistSidebarPreference(){
+    const pref = {
+        desktopHidden: appLayout.classList.contains("desktop-sidebar-hidden")
+    };
+    localStorage.setItem(SIDEBAR_PREF_KEY, JSON.stringify(pref));
+}
+
+function applySidebarPreference(){
+    const raw = localStorage.getItem(SIDEBAR_PREF_KEY);
+    if(!raw) return;
+
+    try {
+        const pref = JSON.parse(raw);
+        if(!isMobile() && pref.desktopHidden){
+            appLayout.classList.add("desktop-sidebar-hidden");
+            syncMenuExpanded();
+        }
+    } catch {
+        localStorage.removeItem(SIDEBAR_PREF_KEY);
+    }
+}
+
+function toggleSidebar(){
+    if(isMobile()){
+        appLayout.classList.toggle("mobile-sidebar-open");
+        syncMenuExpanded();
+        return;
+    }
+
+    appLayout.classList.toggle("desktop-sidebar-hidden");
+    syncMenuExpanded();
+    persistSidebarPreference();
+}
+
+function setSection(sectionName){
+    Object.entries(sections).forEach(([name, section]) => {
+        section.classList.toggle("active", name === sectionName);
+    });
+
+    navButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.section === sectionName);
+    });
+}
+
+function renderSidebarStats(){
+    sideOrg.innerText = organizaciones.length;
+    sideContactos.innerText = contactos.length;
+    sideLeads.innerText = leads.filter(l => l.estado !== "cerrado").length;
+    sideCotizaciones.innerText = cotizaciones.length;
+}
+
+function renderGuideStatus(){
+    const step1 = organizaciones.length > 0;
+    const step2 = contactos.length > 0;
+    const step3 = leads.length > 0;
+    const step4 = cotizaciones.length > 0;
+    const step5 = leads.some(l => Array.isArray(l.actividades) && l.actividades.length > 0);
+
+    guideStatus.innerText =
+        `Progreso del flujo: ` +
+        `1) ${step1 ? "OK" : "Pendiente"} | ` +
+        `2) ${step2 ? "OK" : "Pendiente"} | ` +
+        `3) ${step3 ? "OK" : "Pendiente"} | ` +
+        `4) ${step4 ? "OK" : "Pendiente"} | ` +
+        `5) ${step5 ? "OK" : "Pendiente"}`;
+}
+
+function goToGuideStep(sectionName, focusId){
+    setSection(sectionName);
+
+    if(isMobile()) closeSidebar();
+
+    if(!focusId) return;
+    const focusTarget = document.getElementById(focusId);
+    if(!focusTarget) return;
+
+    const delay = isMobile() ? 220 : 30;
+    setTimeout(() => focusTarget.focus(), delay);
+}
+
+navButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        setSection(btn.dataset.section);
+        if(isMobile()) closeSidebar();
+    });
+});
+
+guideLinks.forEach(link => {
+    link.addEventListener("click", () => {
+        goToGuideStep(link.dataset.goSection, link.dataset.focus || "");
+    });
+});
+
+quickNoteButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        const template = btn.dataset.template || "";
+        const base = nuevaAct.value.trim();
+        nuevaAct.value = base ? `${base}\n${template}` : template;
+        nuevaAct.focus();
+        nuevaAct.setSelectionRange(nuevaAct.value.length, nuevaAct.value.length);
+    });
+});
+
+if(demoWizardBtn){
+    demoWizardBtn.addEventListener("click", fillDemoWizardStep);
+}
+
+if(demoCotWizardBtn){
+    demoCotWizardBtn.addEventListener("click", fillDemoCotizacion);
+}
+
+if(reloadDemoBtn){
+    reloadDemoBtn.addEventListener("click", reloadSynchronizedDemoData);
+}
+
+menuToggle.addEventListener("click", toggleSidebar);
+sidebarBackdrop.addEventListener("click", closeSidebar);
+
+window.addEventListener("resize", () => {
+    if(!isMobile()) appLayout.classList.remove("mobile-sidebar-open");
+    syncMenuExpanded();
+});
+
+document.addEventListener("keydown", (event) => {
+    if(event.key === "Escape") closeSidebar();
+});
+
+function save(){
+    state = {organizaciones, contactos, leads, cotizaciones};
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    renderSidebarStats();
+    renderGuideStatus();
+    renderMasterLists();
+    renderCotizacionesList();
+}
+
+function normalizeText(value){
+    return (value || "").trim().toLowerCase();
+}
+
+function ensureSelectOption(selectEl, value, label){
+    if(!selectEl) return;
+    const hasOption = Array.from(selectEl.options).some(option => option.value === value);
+    if(!hasOption){
+        selectEl.add(new Option(label, value));
+    }
+    selectEl.value = value;
+}
+
+function buildUniqueCaptureDemo(){
+    let seq = demoCaptureSequence;
+
+    while(true){
+        const seqStr = String(seq).padStart(3, "0");
+        const ruc = String(20991000000 + seq);
+        const codigoIndividual = `DMO${String(seq).padStart(4, "0")}`;
+        const correo = `contacto.demo.${seq}@ecosierra.pe`;
+
+        const rucTaken = organizaciones.some(org => normalizeText(org.ruc) === normalizeText(ruc));
+        const codeTaken = contactos.some(contacto => normalizeText(contacto.codigoIndividual) === normalizeText(codigoIndividual));
+        const emailTaken = contactos.some(contacto => normalizeText(contacto.correo) === normalizeText(correo));
+
+        if(!rucTaken && !codeTaken && !emailTaken){
+            demoCaptureSequence = seq + 1;
+
+            const org = {
+                id: `ORG-DEMO-${seqStr}`,
+                ruc,
+                nombre: `EcoSierra Demo ${seqStr}`,
+                nombreCompleto: `EcoSierra Soluciones Integrales Demo ${seqStr} SAC`,
+                contactoVigente: "Contacto activo",
+                tipoOrganizacion: "Empresa nacional",
+                tamano: "Pequena",
+                sector: "Agricola",
+                ubicacion: "Cusco",
+                alianzas: "Red territorial demo",
+                actividades: "Asistencia tecnica y formulacion de proyectos productivos",
+                departamento: "Cusco",
+                linkedin: `linkedin.com/company/ecosierra-demo-${seqStr}`
+            };
+
+            const contact = {
+                id: `CON-DEMO-${seqStr}`,
+                codigoIndividual,
+                vocativo: "Sr.",
+                nombres: "Mateo",
+                apellidos: `Quispe Demo ${seqStr}`,
+                nombre: `Mateo Quispe Demo ${seqStr}`,
+                nombreCompleto: `Mateo Quispe Demo ${seqStr}`,
+                correo,
+                correo2: `m.quispe.demo.${seq}@gmail.com`,
+                telefono: `98${String(1000000 + seq).slice(-7)}`,
+                cargo: "Coordinador de proyectos",
+                comentarios: "Registro generado por autocompletado guiado.",
+                orgId: org.id,
+                orgAbrev: org.nombre,
+                orgExtendido: org.nombreCompleto,
+                orgRuc: org.ruc,
+                orgTipo: org.tipoOrganizacion,
+                orgTamano: org.tamano,
+                orgSector: org.sector,
+                orgDepartamento: org.departamento,
+                orgUbicacion: org.ubicacion
+            };
+
+            const lead = {
+                id: `LEAD-DEMO-${seqStr}`,
+                contactoId: contact.id,
+                orgId: org.id,
+                codigoIndividual,
+                nombre: contact.nombreCompleto,
+                empresa: org.nombre,
+                correo,
+                tipoOrg: org.tipoOrganizacion,
+                sectorOrg: org.sector,
+                canal: "Referido",
+                creacion: "2026-04-21",
+                nextDate: "2026-04-28",
+                closeDate: "",
+                challenge: "Necesita estructurar portafolio de proyectos para convocatoria regional.",
+                servicio: "Formulacion de proyecto Innovasuyu",
+                encargado: "Karien Diaz",
+                estado: "nuevo",
+                next: "Coordinar reunion de levantamiento con equipo tecnico.",
+                historial: "Lead demo generado para pruebas de autocompletado guiado.",
+                actividades: []
+            };
+
+            return { org, contact, lead };
+        }
+
+        seq++;
+    }
+}
+
+function resolveDraftOrganizationId(demoOrg){
+    const found = organizaciones.find(org =>
+        normalizeText(org.ruc) === normalizeText(demoOrg.ruc)
+        || normalizeText(org.nombre) === normalizeText(demoOrg.nombre)
+        || normalizeText(org.nombreCompleto) === normalizeText(demoOrg.nombreCompleto)
+    );
+    return found?.id || demoOrg.id;
+}
+
+function resolveDraftContactId(demoContact, resolvedOrgId){
+    const found = contactos.find(contacto =>
+        normalizeText(contacto.codigoIndividual) === normalizeText(demoContact.codigoIndividual)
+        || normalizeText(contacto.correo) === normalizeText(demoContact.correo)
+        || (
+            resolvedOrgId
+            && contacto.orgId === resolvedOrgId
+            && normalizeText(contacto.nombreCompleto) === normalizeText(demoContact.nombreCompleto)
+        )
+    );
+    return found?.id || demoContact.id;
+}
+
+function fillDemoWizardStep(){
+    if(demoWizardStep === 0 || !demoWizardDraft){
+        demoWizardDraft = buildUniqueCaptureDemo();
+    }
+
+    const demoOrg = demoWizardDraft.org;
+    const demoContact = demoWizardDraft.contact;
+    const demoLead = demoWizardDraft.lead;
+
+    if(!demoOrg || !demoContact || !demoLead) return;
+
+    if(demoWizardStep === 0){
+        setSection("captura");
+        document.getElementById("orgRuc").value = demoOrg.ruc;
+        document.getElementById("orgNombre").value = demoOrg.nombre;
+        document.getElementById("orgNombreCompleto").value = demoOrg.nombreCompleto;
+        document.getElementById("orgContactoVigente").value = demoOrg.contactoVigente;
+        document.getElementById("orgTipo").value = demoOrg.tipoOrganizacion;
+        document.getElementById("orgTamano").value = demoOrg.tamano;
+        document.getElementById("orgSector").value = demoOrg.sector;
+        document.getElementById("orgUbicacion").value = demoOrg.ubicacion;
+        document.getElementById("orgAlianzas").value = demoOrg.alianzas;
+        document.getElementById("orgActividades").value = demoOrg.actividades;
+        document.getElementById("orgDepartamento").value = demoOrg.departamento;
+        document.getElementById("orgLinkedin").value = demoOrg.linkedin;
+        if(demoWizardMsg) demoWizardMsg.innerText = "Paso 1 de 3 listo: organizacion demo unica cargada. Pulsa otra vez para completar el contacto.";
+        if(orgMsg) setMsg(orgMsg, "status-ok", "Demo unica cargada: organizacion completada en el formulario.");
+    } else if(demoWizardStep === 1){
+        setSection("captura");
+        const resolvedOrgId = resolveDraftOrganizationId(demoOrg);
+        ensureSelectOption(conOrg, resolvedOrgId, `${demoOrg.nombre} - ${demoOrg.ruc}`);
+        document.getElementById("conCodigoIndividual").value = demoContact.codigoIndividual;
+        document.getElementById("conVocativo").value = demoContact.vocativo;
+        document.getElementById("conNombres").value = demoContact.nombres;
+        document.getElementById("conApellidos").value = demoContact.apellidos;
+        document.getElementById("conNombreCompleto").value = demoContact.nombreCompleto;
+        document.getElementById("conCorreo").value = demoContact.correo;
+        document.getElementById("conCorreo2").value = demoContact.correo2;
+        document.getElementById("conTelefono").value = demoContact.telefono;
+        document.getElementById("conCargo").value = demoContact.cargo;
+        document.getElementById("conComentarios").value = demoContact.comentarios;
+        document.getElementById("conOrgAbrev").value = demoOrg.nombre;
+        document.getElementById("conOrgExtendido").value = demoOrg.nombreCompleto;
+        document.getElementById("conOrgRuc").value = demoOrg.ruc;
+        document.getElementById("conOrgTipo").value = demoOrg.tipoOrganizacion;
+        document.getElementById("conOrgTamano").value = demoOrg.tamano;
+        document.getElementById("conOrgSector").value = demoOrg.sector;
+        document.getElementById("conOrgDepartamento").value = demoOrg.departamento;
+        document.getElementById("conOrgUbicacion").value = demoOrg.ubicacion;
+        renderSelectedContactOrg();
+        if(conNombreCompleto) conNombreCompleto.value = demoContact.nombreCompleto;
+        if(demoWizardMsg) demoWizardMsg.innerText = "Paso 2 de 3 listo: contacto demo unico cargado. Pulsa otra vez para completar el lead.";
+        if(conMsg) setMsg(conMsg, "status-ok", "Demo unica cargada: contacto completado en el formulario.");
+    } else {
+        setSection("captura");
+        const resolvedOrgId = resolveDraftOrganizationId(demoOrg);
+        const resolvedContactId = resolveDraftContactId(demoContact, resolvedOrgId);
+        ensureSelectOption(leadContacto, resolvedContactId, `${demoContact.codigoIndividual} - ${demoLead.nombre} (${demoLead.empresa})`);
+        document.getElementById("leadServicio").value = demoLead.servicio;
+        document.getElementById("leadEncargado").value = demoLead.encargado;
+        document.getElementById("leadCanal").value = demoLead.canal;
+        document.getElementById("leadNext").value = demoLead.next;
+        document.getElementById("leadFechaCreacion").value = demoLead.creacion;
+        document.getElementById("leadFechaProxima").value = demoLead.nextDate;
+        if(demoWizardMsg) demoWizardMsg.innerText = "Paso 3 de 3 listo: lead demo unico cargado. Si quieres, ahora pulsa Agregar Lead para registrarlo.";
+        if(leadMsg) setMsg(leadMsg, "status-ok", "Demo unica cargada: lead completado en el formulario.");
+    }
+
+    demoWizardStep = (demoWizardStep + 1) % 3;
+    if(demoWizardStep === 0){
+        demoWizardDraft = null;
+    }
+    if(demoWizardBtn){
+        demoWizardBtn.innerText = demoWizardStep === 0 ? "Autocompletar paso a paso" : demoWizardStep === 1 ? "Siguiente: contacto" : "Siguiente: lead";
+    }
+}
+
+function fillDemoCotizacion(){
+    const cotLeadEl = document.getElementById("cotLead");
+    const cotAnioEl = document.getElementById("cotAnio");
+    const cotMesEl = document.getElementById("cotMes");
+    const cotDirigidoEl = document.getElementById("cotDirigido");
+    const cotFechaEl = document.getElementById("cotFecha");
+    const cotClienteEl = document.getElementById("cotCliente");
+    const cotProductoEl = document.getElementById("cotProducto");
+    const cotServicioEl = document.getElementById("cotServicioNombre");
+    const cotMontoEl = document.getElementById("cotMonto");
+    const cotMonedaEl = document.getElementById("cotMoneda");
+    const cotEstadoEl = document.getElementById("cotEstado");
+    const cotRemitenteEl = document.getElementById("cotRemitente");
+    const cotTipoOrgEl = document.getElementById("cotTipoOrg");
+    const cotTamanoOrgEl = document.getElementById("cotTamanoOrg");
+    const cotSectorOrgEl = document.getElementById("cotSectorOrg");
+    const cotAlianzasOrgEl = document.getElementById("cotAlianzasOrg");
+    const cotActividadesOrgEl = document.getElementById("cotActividadesOrg");
+    const cotDepartamentoOrgEl = document.getElementById("cotDepartamentoOrg");
+    const cotLinkedinOrgEl = document.getElementById("cotLinkedinOrg");
+    const cotObservacionEl = document.getElementById("cotObservacion");
+    const cotLinkEl = document.getElementById("cotLink");
+
+    setSection("cotizaciones");
+    ensureSelectOption(cotLeadEl, demoCotizacionWizard.leadId, `${demoCotizacionWizard.leadId} - ${demoCotizacionWizard.dirigidoA} (${demoCotizacionWizard.cliente})`);
+    cotLeadEl.value = demoCotizacionWizard.leadId;
+
+    cotAnioEl.value = demoCotizacionWizard.anio;
+    cotMesEl.value = demoCotizacionWizard.mes;
+    cotDirigidoEl.value = demoCotizacionWizard.dirigidoA;
+    cotFechaEl.value = demoCotizacionWizard.fecha;
+    cotClienteEl.value = demoCotizacionWizard.cliente;
+    cotProductoEl.value = demoCotizacionWizard.producto;
+    cotServicioEl.value = demoCotizacionWizard.servicio;
+    cotMontoEl.value = demoCotizacionWizard.monto;
+    cotMonedaEl.value = demoCotizacionWizard.moneda;
+    cotEstadoEl.value = demoCotizacionWizard.estado;
+    cotRemitenteEl.value = demoCotizacionWizard.remitente;
+    cotTipoOrgEl.value = demoCotizacionWizard.tipoOrganizacion;
+    cotTamanoOrgEl.value = demoCotizacionWizard.tamanoOrganizacion;
+    cotSectorOrgEl.value = demoCotizacionWizard.sectorOrganizacion;
+    cotAlianzasOrgEl.value = demoCotizacionWizard.alianzas;
+    cotActividadesOrgEl.value = demoCotizacionWizard.actividadesOrganizacion;
+    cotDepartamentoOrgEl.value = demoCotizacionWizard.departamento;
+    cotLinkedinOrgEl.value = demoCotizacionWizard.linkedin;
+    cotObservacionEl.value = demoCotizacionWizard.observacion;
+    cotLinkEl.value = demoCotizacionWizard.link;
+
+    if(demoCotWizardMsg) demoCotWizardMsg.innerText = "Cotizacion demo cargada: todos los campos estan completos y listos para mostrar o guardar.";
+    if(cotMsg) setMsg(cotMsg, "status-ok", "Demo de cotizacion completada con un mock distinto al flujo de captura.");
+}
+
+function reloadSynchronizedDemoData(){
+    const ok = window.confirm("Esto reemplazara los datos actuales por los datos demo sincronizados. Deseas continuar?");
+    if(!ok) return;
+
+    const cloned = JSON.parse(JSON.stringify(demoState));
+    organizaciones = cloned.organizaciones || [];
+    contactos = cloned.contactos || [];
+    leads = cloned.leads || [];
+    cotizaciones = cloned.cotizaciones || [];
+
+    synchronizeDataRelations();
+
+    orgPage = 1;
+    conPage = 1;
+    cotPage = 1;
+    demoWizardStep = 0;
+    demoWizardDraft = null;
+
+    if(demoWizardBtn) demoWizardBtn.innerText = "Autocompletar paso a paso";
+    if(demoWizardMsg) demoWizardMsg.innerText = "Paso 1: completa la organizacion.";
+    if(demoCotWizardMsg) demoCotWizardMsg.innerText = "Pulsa el boton para cargar una cotizacion demo completa.";
+
+    if(panel.classList.contains("open")) closePanel();
+
+    syncSelectors();
+    render();
+    save();
+    setSection("captura");
+
+    setMsg(orgMsg, "status-ok", "Datos demo sincronizados recargados correctamente.");
+}
+
+function getDateStamp(){
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}${m}${d}`;
+}
+
+function getCurrentMonthName(){
+    const months = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre"
+    ];
+    return months[new Date().getMonth()];
+}
+
+function csvValue(value){
+    const text = String(value ?? "").replaceAll("\r", " ").replaceAll("\n", " ");
+    return `"${text.replaceAll('"', '""')}"`;
+}
+
+function downloadCsv(filename, headers, rows){
+    const head = headers.map(csvValue).join(",");
+    const body = rows.map(row => row.map(csvValue).join(",")).join("\n");
+    const csv = `\uFEFF${head}\n${body}`;
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+function getFilteredOrganizations(){
+    const orgQuery = normalizeText(orgSearch.value);
+    return organizaciones.filter(o => {
+        const haystack = [
+            o.ruc,
+            o.nombre,
+            o.nombreCompleto,
+            o.contactoVigente,
+            o.tipoOrganizacion,
+            o.tamano,
+            o.sector,
+            o.ubicacion,
+            o.alianzas,
+            o.actividades,
+            o.departamento,
+            o.linkedin
+        ].map(normalizeText).join(" ");
+        return haystack.includes(orgQuery);
+    });
+}
+
+function getFilteredContacts(){
+    const conQuery = normalizeText(conSearch.value);
+    return contactos.filter(c => {
+        const haystack = [
+            c.codigoIndividual,
+            c.vocativo,
+            c.nombres,
+            c.apellidos,
+            c.nombre,
+            c.nombreCompleto,
+            c.correo,
+            c.correo2,
+            c.telefono,
+            c.cargo,
+            c.comentarios,
+            c.orgAbrev,
+            c.orgExtendido,
+            c.orgRuc,
+            c.orgTipo,
+            c.orgTamano,
+            c.orgSector,
+            c.orgDepartamento,
+            c.orgUbicacion,
+            getOrgNameById(c.orgId)
+        ].map(normalizeText).join(" ");
+        return haystack.includes(conQuery);
+    });
+}
+
+function getFilteredCotizaciones(){
+    const query = normalizeText(cotSearch.value);
+    return cotizaciones.filter(c => {
+        const haystack = [
+            c.leadId,
+            c.cotId,
+            c.cliente,
+            c.servicio,
+            c.estado,
+            c.remitente,
+            c.dirigidoA,
+            c.tipoOrganizacion,
+            c.tamanoOrganizacion,
+            c.sectorOrganizacion,
+            c.alianzas,
+            c.actividadesOrganizacion,
+            c.departamento,
+            c.linkedin
+        ].map(normalizeText).join(" ");
+        return haystack.includes(query);
+    });
+}
+
+function exportOrganizationsCsv(){
+    const filtered = getFilteredOrganizations();
+    if(filtered.length === 0) return alert("No hay organizaciones para exportar.");
+
+    const rows = filtered.map(o => [
+        o.ruc,
+        o.nombre,
+        o.nombreCompleto || "",
+        o.contactoVigente || "",
+        o.tipoOrganizacion || "",
+        o.tamano || "",
+        o.sector || "",
+        o.ubicacion || "",
+        o.alianzas || "",
+        o.actividades || "",
+        o.departamento || "",
+        o.linkedin || ""
+    ]);
+    downloadCsv(
+        `organizaciones_${getDateStamp()}.csv`,
+        ["RUC", "Organizacion", "Nombre completo", "Contacto vigente", "Tipo de organizacion", "Tamano", "Sector", "Ubicacion", "Alianzas", "Actividades", "Departamento", "LinkedIn"],
+        rows
+    );
+}
+
+function exportContactsCsv(){
+    const filtered = getFilteredContacts();
+    if(filtered.length === 0) return alert("No hay contactos para exportar.");
+
+    const rows = filtered.map(c => [
+        c.codigoIndividual || "",
+        c.vocativo || "",
+        c.nombres || "",
+        c.apellidos || "",
+        c.correo || "",
+        c.correo2 || "",
+        c.telefono || "",
+        c.cargo || "",
+        c.comentarios || "",
+        getOrgNameById(c.orgId),
+        c.orgAbrev || "",
+        c.orgExtendido || "",
+        c.orgRuc || "",
+        c.orgTipo || "",
+        c.orgTamano || "",
+        c.orgSector || "",
+        c.orgDepartamento || "",
+        c.orgUbicacion || ""
+    ]);
+    downloadCsv(
+        `contactos_${getDateStamp()}.csv`,
+        ["Codigo", "Vocativo", "Nombres", "Apellidos", "Correo 1", "Correo 2", "Telefono", "Cargo", "Comentarios", "Organizacion", "Org abreviada", "Org extendida", "RUC", "Tipo org", "Tamano org", "Sector org", "Departamento", "Ubicacion"],
+        rows
+    );
+}
+
+function exportLeadsCsv(){
+    if(leads.length === 0) return alert("No hay leads para exportar.");
+
+    const rows = leads.map(l => [
+        l.codigoIndividual || "",
+        l.contactoId || "",
+        l.nombre,
+        l.empresa,
+        l.correo || "",
+        l.tipoOrg || "",
+        l.sectorOrg || "",
+        l.servicio || "",
+        l.encargado || "",
+        l.canal || "",
+        l.creacion || "",
+        l.estado,
+        l.next || "",
+        l.nextDate || "",
+        isLeadAlertActive(l) ? "Si" : "No",
+        l.closeDate || "",
+        l.challenge || "",
+        (l.actividades || []).length,
+        l.historial || ""
+    ]);
+    downloadCsv(
+        `leads_pipeline_${getDateStamp()}.csv`,
+        ["Codigo", "ID contacto", "Nombre", "Empresa", "Correo", "Tipo org", "Sector org", "Servicio", "Encargado", "Canal", "Fecha creacion", "Estado", "Proxima actividad", "Fecha proxima actividad", "Alerta", "Fecha cierre", "Desafio u oportunidad", "Nro actividades", "Historial lead"],
+        rows
+    );
+}
+
+function exportCurrentLeadCsv(){
+    if(current === null || !leads[current]) return alert("Abre un lead para exportar su detalle.");
+
+    const lead = leads[current];
+    const rows = (lead.actividades || []).map(a => [
+        lead.codigoIndividual || "",
+        lead.contactoId || "",
+        lead.nombre,
+        lead.empresa,
+        lead.correo || "",
+        lead.tipoOrg || "",
+        lead.sectorOrg || "",
+        lead.estado,
+        lead.next || "",
+        lead.nextDate || "",
+        isLeadAlertActive(lead) ? "Si" : "No",
+        lead.closeDate || "",
+        lead.challenge || "",
+        lead.historial || "",
+        a.fecha || "",
+        a.txt || ""
+    ]);
+
+    if(rows.length === 0){
+        rows.push([lead.codigoIndividual || "", lead.contactoId || "", lead.nombre, lead.empresa, lead.correo || "", lead.tipoOrg || "", lead.sectorOrg || "", lead.estado, lead.next || "", lead.nextDate || "", isLeadAlertActive(lead) ? "Si" : "No", lead.closeDate || "", lead.challenge || "", lead.historial || "", "", "Sin actividades"]);
+    }
+
+    downloadCsv(
+        `lead_${normalizeText(lead.nombre).replaceAll(" ", "_") || "detalle"}_${getDateStamp()}.csv`,
+        ["Codigo", "ID contacto", "Lead", "Empresa", "Correo", "Tipo org", "Sector org", "Estado", "Proxima actividad", "Fecha proxima actividad", "Alerta", "Fecha cierre", "Desafio u oportunidad", "Historial lead", "Fecha actividad", "Detalle actividad"],
+        rows
+    );
+}
+
+function exportCotizacionesCsv(){
+    const filtered = getFilteredCotizaciones();
+    if(filtered.length === 0) return alert("No hay cotizaciones para exportar.");
+
+    const rows = filtered.map(c => [
+        c.anio,
+        c.mes,
+        c.leadId,
+        c.cotId,
+        c.dirigidoA,
+        c.fecha,
+        c.cliente,
+        c.producto,
+        c.servicio,
+        c.monto,
+        c.moneda,
+        c.estado,
+        c.remitente,
+        c.tipoOrganizacion,
+        c.tamanoOrganizacion,
+        c.sectorOrganizacion,
+        c.alianzas,
+        c.actividadesOrganizacion,
+        c.departamento,
+        c.linkedin,
+        c.observacion,
+        c.link
+    ]);
+
+    downloadCsv(
+        `cotizaciones_${getDateStamp()}.csv`,
+        ["Anio", "Mes", "ID de lead", "Cotizacion", "Dirigido a", "Fecha", "Cliente", "Producto", "Servicio", "Monto", "Moneda", "Estado", "Remitente", "Tipo org", "Tamano org", "Sector org", "Alianzas", "Actividades org", "Departamento", "LinkedIn", "Observacion", "Link de propuesta"],
+        rows
+    );
+}
+
+function escapeHtml(value){
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function getOrgNameById(orgId){
+    const org = organizaciones.find(o => o.id === orgId);
+    return org ? org.nombre : "Sin organizacion";
+}
+
+function getOrgById(orgId){
+    return organizaciones.find(o => o.id === orgId) || null;
+}
+
+function renderSelectedContactOrg(){
+    const org = getOrgById(conOrg.value);
+
+    if(!org){
+        [conOrgAbrev, conOrgExtendido, conOrgRuc, conOrgTipo, conOrgTamano, conOrgSector, conOrgDepartamento, conOrgUbicacion].forEach(el => {
+            if(el) el.value = "";
+        });
+        return;
+    }
+
+    if(conOrgAbrev) conOrgAbrev.value = org.nombre || "";
+    if(conOrgExtendido) conOrgExtendido.value = org.nombreCompleto || org.nombre || "";
+    if(conOrgRuc) conOrgRuc.value = org.ruc || "";
+    if(conOrgTipo) conOrgTipo.value = org.tipoOrganizacion || "";
+    if(conOrgTamano) conOrgTamano.value = org.tamano || "";
+    if(conOrgSector) conOrgSector.value = org.sector || "";
+    if(conOrgDepartamento) conOrgDepartamento.value = org.departamento || "";
+    if(conOrgUbicacion) conOrgUbicacion.value = org.ubicacion || "";
+}
+
+function syncContactFullName(){
+    if(!conNombreCompleto) return;
+    const fullName = [conNombres?.value.trim(), conApellidos?.value.trim()].filter(Boolean).join(" ").trim();
+    conNombreCompleto.value = fullName;
+}
+
+function getLeadById(leadId){
+    return leads.find(l => l.id === leadId);
+}
+
+function getContactById(contactoId){
+    return contactos.find(c => c.id === contactoId) || null;
+}
+
+function getLeadOrg(lead){
+    if(!lead) return null;
+    return organizaciones.find(o => o.id === lead.orgId) || null;
+}
+
+function isLeadAlertActive(lead){
+    if(!lead || lead.estado === "cerrado" || !lead.nextDate) return false;
+    const due = new Date(`${lead.nextDate}T00:00:00`);
+    if(Number.isNaN(due.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return due <= today;
+}
+
+function renderLeadMeta(lead){
+    const contact = getContactById(lead?.contactoId);
+    const org = getLeadOrg(lead);
+    const pills = [
+        lead?.codigoIndividual || contact?.codigoIndividual,
+        org?.ruc ? `RUC: ${org.ruc}` : null,
+        org?.tipoOrganizacion ? `Tipo: ${org.tipoOrganizacion}` : null,
+        org?.sector ? `Sector: ${org.sector}` : null,
+        contact?.correo ? `Correo: ${contact.correo}` : null,
+        lead?.canal ? `Canal: ${lead.canal}` : null,
+        lead?.creacion ? `Creado: ${lead.creacion}` : null,
+        lead?.nextDate ? `Prox. act.: ${lead.nextDate}` : null,
+        lead?.closeDate ? `Cierre: ${lead.closeDate}` : null,
+        lead && isLeadAlertActive(lead) ? "Alerta activa" : null
+    ].filter(Boolean);
+
+    if(!pMeta) return;
+    pMeta.innerHTML = pills.map(text => `<span class="pill">${escapeHtml(text)}</span>`).join("");
+}
+
+function prefillCotizacionFromLead(leadId){
+    const lead = getLeadById(leadId);
+    if(!lead) return;
+    const org = organizaciones.find(o => o.id === lead.orgId)
+        || organizaciones.find(o => o.nombre === lead.empresa)
+        || null;
+
+    const cotDirigido = document.getElementById("cotDirigido");
+    const cotCliente = document.getElementById("cotCliente");
+    const cotServicioNombre = document.getElementById("cotServicioNombre");
+    const cotRemitente = document.getElementById("cotRemitente");
+    const cotAnio = document.getElementById("cotAnio");
+    const cotMes = document.getElementById("cotMes");
+    const cotFecha = document.getElementById("cotFecha");
+    const cotEstado = document.getElementById("cotEstado");
+    const cotTipoOrg = document.getElementById("cotTipoOrg");
+    const cotTamanoOrg = document.getElementById("cotTamanoOrg");
+    const cotSectorOrg = document.getElementById("cotSectorOrg");
+    const cotAlianzasOrg = document.getElementById("cotAlianzasOrg");
+    const cotActividadesOrg = document.getElementById("cotActividadesOrg");
+    const cotDepartamentoOrg = document.getElementById("cotDepartamentoOrg");
+    const cotLinkedinOrg = document.getElementById("cotLinkedinOrg");
+
+    cotDirigido.value = lead.nombre || "";
+    cotCliente.value = lead.empresa || "";
+    cotServicioNombre.value = lead.servicio || "";
+    cotRemitente.value = lead.encargado || "";
+    cotTipoOrg.value = org?.tipoOrganizacion || "";
+    cotTamanoOrg.value = org?.tamano || "";
+    cotSectorOrg.value = org?.sector || "";
+    cotAlianzasOrg.value = org?.alianzas || "";
+    cotActividadesOrg.value = org?.actividades || "";
+    cotDepartamentoOrg.value = org?.departamento || "";
+    cotLinkedinOrg.value = org?.linkedin || "";
+
+    if(!cotAnio.value) cotAnio.value = String(new Date().getFullYear());
+    if(!cotMes.value) cotMes.value = getCurrentMonthName();
+    if(!cotFecha.value) cotFecha.value = new Date().toISOString().slice(0, 10);
+    if(!cotEstado.value) cotEstado.value = "Enviado";
+
+    setMsg(cotMsg, "status-ok", "Campos autocompletados desde el lead. Revisa y ajusta antes de guardar.");
+}
+
+function paginate(items, page, pageSize){
+    const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    const start = (safePage - 1) * pageSize;
+    return {
+        pageItems: items.slice(start, start + pageSize),
+        safePage,
+        totalPages
+    };
+}
+
+function renderMasterLists(){
+    const filteredOrgs = getFilteredOrganizations();
+    const filteredContactos = getFilteredContacts();
+
+    const orgPageData = paginate(filteredOrgs, orgPage, PAGE_SIZE);
+    orgPage = orgPageData.safePage;
+    orgPageLabel.innerText = `Pagina ${orgPageData.safePage} de ${orgPageData.totalPages}`;
+    orgListMeta.innerText = `${filteredOrgs.length} de ${organizaciones.length} organizaciones`;
+
+    orgTableBody.innerHTML = orgPageData.pageItems.length
+        ? orgPageData.pageItems.map(o => `
+            <tr>
+                <td>${escapeHtml(o.ruc)}</td>
+                <td>${escapeHtml(o.nombre)}</td>
+                <td>${escapeHtml(o.nombreCompleto || "-")}</td>
+                <td>${escapeHtml(o.contactoVigente || "-")}</td>
+                <td>${escapeHtml(o.tipoOrganizacion || "-")}</td>
+                <td>${escapeHtml(o.tamano || "-")}</td>
+                <td>${escapeHtml(o.sector || "-")}</td>
+                <td>${escapeHtml(o.ubicacion || "-")}</td>
+                <td>${escapeHtml(o.alianzas || "-")}</td>
+                <td>${escapeHtml(o.actividades || "-")}</td>
+                <td>${escapeHtml(o.departamento || "-")}</td>
+                <td>${escapeHtml(o.linkedin || "-")}</td>
+            </tr>
+        `).join("")
+        : '<tr><td colspan="12">Sin resultados</td></tr>';
+
+    orgPrev.disabled = orgPageData.safePage <= 1;
+    orgNext.disabled = orgPageData.safePage >= orgPageData.totalPages;
+
+    const conPageData = paginate(filteredContactos, conPage, PAGE_SIZE);
+    conPage = conPageData.safePage;
+    conPageLabel.innerText = `Pagina ${conPageData.safePage} de ${conPageData.totalPages}`;
+    conListMeta.innerText = `${filteredContactos.length} de ${contactos.length} contactos`;
+
+    conTableBody.innerHTML = conPageData.pageItems.length
+        ? conPageData.pageItems.map(c => `
+            <tr>
+                <td>${escapeHtml(c.codigoIndividual || "-")}</td>
+                <td>${escapeHtml(c.vocativo || "-")}</td>
+                <td>${escapeHtml(c.nombres || "-")}</td>
+                <td>${escapeHtml(c.apellidos || "-")}</td>
+                <td>${escapeHtml(c.correo)}</td>
+                <td>${escapeHtml(c.correo2 || "-")}</td>
+                <td>${escapeHtml(c.telefono || "-")}</td>
+                <td>${escapeHtml(c.cargo || "-")}</td>
+                <td>${escapeHtml(c.comentarios || "-")}</td>
+                <td>${escapeHtml(getOrgNameById(c.orgId))}</td>
+            </tr>
+        `).join("")
+        : '<tr><td colspan="10">Sin resultados</td></tr>';
+
+    conPrev.disabled = conPageData.safePage <= 1;
+    conNext.disabled = conPageData.safePage >= conPageData.totalPages;
+}
+
+function renderCotizacionesList(){
+    const filtered = getFilteredCotizaciones();
+    const pageData = paginate(filtered, cotPage, PAGE_SIZE);
+    cotPage = pageData.safePage;
+    cotPageLabel.innerText = `Pagina ${pageData.safePage} de ${pageData.totalPages}`;
+    cotListMeta.innerText = `${filtered.length} de ${cotizaciones.length} cotizaciones`;
+
+    cotTableBody.innerHTML = pageData.pageItems.length
+        ? pageData.pageItems.map(c => `
+            <tr>
+                <td>${escapeHtml(c.anio)}</td>
+                <td>${escapeHtml(c.mes)}</td>
+                <td>${escapeHtml(c.leadId)}</td>
+                <td>${escapeHtml(c.cotId)}</td>
+                <td>${escapeHtml(c.dirigidoA || "-")}</td>
+                <td>${escapeHtml(c.fecha || "-")}</td>
+                <td>${escapeHtml(c.cliente || "-")}</td>
+                <td>${escapeHtml(c.producto || "-")}</td>
+                <td>${escapeHtml(c.servicio || "-")}</td>
+                <td>${escapeHtml(c.monto || "-")}</td>
+                <td>${escapeHtml(c.moneda || "-")}</td>
+                <td>${escapeHtml(c.estado || "-")}</td>
+                <td>${escapeHtml(c.remitente || "-")}</td>
+                <td>${escapeHtml(c.tipoOrganizacion || "-")}</td>
+                <td>${escapeHtml(c.tamanoOrganizacion || "-")}</td>
+                <td>${escapeHtml(c.sectorOrganizacion || "-")}</td>
+                <td>${escapeHtml(c.alianzas || "-")}</td>
+                <td>${escapeHtml(c.actividadesOrganizacion || "-")}</td>
+                <td>${escapeHtml(c.departamento || "-")}</td>
+                <td>${escapeHtml(c.linkedin || "-")}</td>
+                <td>${escapeHtml(c.observacion || "-")}</td>
+                <td>${c.link ? `<a href="${escapeHtml(c.link)}" target="_blank" rel="noopener noreferrer">Ver propuesta</a>` : "-"}</td>
+            </tr>
+        `).join("")
+        : '<tr><td colspan="22">Sin resultados</td></tr>';
+
+    cotPrev.disabled = pageData.safePage <= 1;
+    cotNext.disabled = pageData.safePage >= pageData.totalPages;
+}
+
+function setMsg(el, type, text){
+    el.className = `status-msg ${type}`;
+    el.innerText = text;
+}
+
+function findOrgByRuc(ruc){
+    return organizaciones.find(o => o.ruc === ruc);
+}
+
+function addOrganizacion(){
+    const ruc = document.getElementById("orgRuc").value.trim();
+    const nombre = document.getElementById("orgNombre").value.trim();
+    const nombreCompleto = document.getElementById("orgNombreCompleto").value.trim();
+    const contactoVigente = document.getElementById("orgContactoVigente").value.trim() || "Contacto activo";
+    const tipoOrganizacion = document.getElementById("orgTipo").value.trim();
+    const tamano = document.getElementById("orgTamano").value.trim();
+    const sector = document.getElementById("orgSector").value.trim();
+    const ubicacion = document.getElementById("orgUbicacion").value.trim();
+    const alianzas = document.getElementById("orgAlianzas").value.trim();
+    const actividadesOrg = document.getElementById("orgActividades").value.trim();
+    const departamento = document.getElementById("orgDepartamento").value.trim();
+    const linkedin = document.getElementById("orgLinkedin").value.trim();
+
+    if(!/^\d{11}$/.test(ruc)){
+        return setMsg(orgMsg, "status-err", "RUC invalido: debe tener 11 digitos.");
+    }
+
+    if(!nombre){
+        return setMsg(orgMsg, "status-err", "Completa el nombre de la organizacion.");
+    }
+
+    if(!tipoOrganizacion || !tamano || !sector || !departamento){
+        return setMsg(orgMsg, "status-err", "Completa campos obligatorios: tipo de organizacion, tamano, sector y departamento.");
+    }
+
+    if(findOrgByRuc(ruc)){
+        return setMsg(orgMsg, "status-warn", "Duplicado evitado: ese RUC ya existe.");
+    }
+
+    organizaciones.push({
+        id: `ORG-${Date.now()}`,
+        ruc,
+        nombre,
+        nombreCompleto,
+        contactoVigente,
+        tipoOrganizacion,
+        tamano,
+        sector,
+        ubicacion,
+        alianzas,
+        actividades: actividadesOrg,
+        departamento,
+        linkedin
+    });
+
+    document.getElementById("orgRuc").value = "";
+    document.getElementById("orgNombre").value = "";
+    document.getElementById("orgNombreCompleto").value = "";
+    document.getElementById("orgContactoVigente").value = "";
+    document.getElementById("orgTipo").value = "";
+    document.getElementById("orgTamano").value = "";
+    document.getElementById("orgSector").value = "";
+    document.getElementById("orgUbicacion").value = "";
+    document.getElementById("orgAlianzas").value = "";
+    document.getElementById("orgActividades").value = "";
+    document.getElementById("orgDepartamento").value = "";
+    document.getElementById("orgLinkedin").value = "";
+
+    syncSelectors();
+    save();
+    setMsg(orgMsg, "status-ok", "Organizacion registrada correctamente.");
+}
+
+function contactoDuplicado(correo, nombre, orgId){
+    const correoNorm = normalizeText(correo);
+    const nombreNorm = normalizeText(nombre);
+
+    return contactos.find(c => {
+        const sameEmail = correoNorm && normalizeText(c.correo) === correoNorm;
+        const sameNameOrg = normalizeText(c.nombre) === nombreNorm && c.orgId === orgId;
+        return sameEmail || sameNameOrg;
+    });
+}
+
+function addContacto(){
+    const codigoIndividual = document.getElementById("conCodigoIndividual").value.trim();
+    const vocativo = document.getElementById("conVocativo").value.trim();
+    const nombres = document.getElementById("conNombres").value.trim();
+    const apellidos = document.getElementById("conApellidos").value.trim();
+    const correo = document.getElementById("conCorreo").value.trim();
+    const correo2 = document.getElementById("conCorreo2").value.trim();
+    const telefono = document.getElementById("conTelefono").value.trim();
+    const cargo = document.getElementById("conCargo").value.trim();
+    const comentarios = document.getElementById("conComentarios").value.trim();
+    const orgId = conOrg.value;
+    const org = getOrgById(orgId);
+    const nombreCompleto = [nombres, apellidos].filter(Boolean).join(" ").trim();
+
+    if(!orgId){
+        return setMsg(conMsg, "status-err", "Primero registra una organizacion.");
+    }
+
+    if(!org){
+        return setMsg(conMsg, "status-err", "La organizacion seleccionada ya no existe. Actualiza la lista y vuelve a elegir.");
+    }
+
+    if(!codigoIndividual){
+        return setMsg(conMsg, "status-err", "Codigo individual es obligatorio.");
+    }
+
+    if(!nombres || !apellidos || !correo){
+        return setMsg(conMsg, "status-err", "Completa nombres, apellidos y correo 1.");
+    }
+
+    if(!/^\S+@\S+\.\S+$/.test(correo)){
+        return setMsg(conMsg, "status-err", "Correo invalido: revisa el formato antes de guardar.");
+    }
+
+    if(correo2 && !/^\S+@\S+\.\S+$/.test(correo2)){
+        return setMsg(conMsg, "status-err", "Correo 2 invalido: revisa el formato antes de guardar.");
+    }
+
+    if(telefono && !/^[0-9+()\-\s]{6,}$/.test(telefono)){
+        return setMsg(conMsg, "status-err", "Telefono invalido: usa solo numeros y separadores comunes.");
+    }
+
+    if(contactos.find(c => normalizeText(c.codigoIndividual) === normalizeText(codigoIndividual))){
+        return setMsg(conMsg, "status-warn", "Duplicado evitado: ese codigo individual ya existe.");
+    }
+
+    if(contactoDuplicado(correo, nombreCompleto, orgId) || (correo2 && contactoDuplicado(correo2, nombreCompleto, orgId))){
+        return setMsg(conMsg, "status-warn", "Duplicado evitado: contacto ya existe por correo o por nombre+organizacion.");
+    }
+
+    contactos.push({
+        id: `CON-${Date.now()}`,
+        codigoIndividual,
+        vocativo,
+        nombres,
+        apellidos,
+        nombre: nombreCompleto,
+        nombreCompleto,
+        correo,
+        correo2,
+        telefono,
+        cargo,
+        comentarios,
+        orgId,
+        orgAbrev: org.nombre || "",
+        orgExtendido: org.nombreCompleto || org.nombre || "",
+        orgRuc: org.ruc || "",
+        orgTipo: org.tipoOrganizacion || "",
+        orgTamano: org.tamano || "",
+        orgSector: org.sector || "",
+        orgDepartamento: org.departamento || "",
+        orgUbicacion: org.ubicacion || ""
+    });
+
+    document.getElementById("conVocativo").value = "";
+    document.getElementById("conNombres").value = "";
+    document.getElementById("conApellidos").value = "";
+    document.getElementById("conCorreo").value = "";
+    document.getElementById("conCorreo2").value = "";
+    document.getElementById("conTelefono").value = "";
+    document.getElementById("conCargo").value = "";
+    document.getElementById("conComentarios").value = "";
+    document.getElementById("conCodigoIndividual").value = "";
+    if(conNombreCompleto) conNombreCompleto.value = "";
+
+    syncSelectors();
+    renderSelectedContactOrg();
+    save();
+    setMsg(conMsg, "status-ok", "Contacto agregado a la base maestra.");
+}
+
+function addLeadFromContacto(){
+    const contactoId = leadContacto.value;
+    const servicio = document.getElementById("leadServicio").value.trim();
+    const encargado = document.getElementById("leadEncargado").value.trim();
+    const canal = leadCanal.value.trim();
+    const creacion = leadFechaCreacion.value || new Date().toISOString().slice(0, 10);
+    const nextDate = leadFechaProxima.value;
+    const next = document.getElementById("leadNext").value.trim();
+
+    if(!contactoId){
+        return setMsg(leadMsg, "status-err", "Selecciona un contacto para convertir.");
+    }
+
+    const contacto = contactos.find(c => c.id === contactoId);
+    if(!contacto){
+        return setMsg(leadMsg, "status-err", "Contacto no encontrado.");
+    }
+
+    const org = organizaciones.find(o => o.id === contacto.orgId);
+    const yaExiste = leads.find(l => l.contactoId === contactoId && l.estado !== "cerrado");
+
+    if(yaExiste){
+        return setMsg(leadMsg, "status-warn", "Este contacto ya tiene un lead activo.");
+    }
+
+    leads.push({
+        id: `LEAD-${Date.now()}`,
+        contactoId,
+        orgId: contacto.orgId,
+        codigoIndividual: contacto.codigoIndividual || "",
+        nombre: contacto.nombre,
+        empresa: org ? org.nombre : "Sin organizacion",
+        correo: contacto.correo || "",
+        tipoOrg: org?.tipoOrganizacion || "",
+        sectorOrg: org?.sector || "",
+        canal: canal || "",
+        creacion,
+        nextDate: nextDate || "",
+        closeDate: "",
+        challenge: "",
+        servicio: servicio || "No definido",
+        encargado: encargado || "No asignado",
+        estado:"nuevo",
+        next: next || "",
+        historial: "",
+        actividades:[]
+    });
+
+    document.getElementById("leadServicio").value = "";
+    document.getElementById("leadEncargado").value = "";
+    leadCanal.value = "";
+    leadFechaCreacion.value = new Date().toISOString().slice(0, 10);
+    leadFechaProxima.value = "";
+    document.getElementById("leadNext").value = "";
+
+    save();
+    render();
+    setMsg(leadMsg, "status-ok", "Lead creado desde contacto validado.");
+}
+
+function buildCotizacionId(){
+    const n = cotizaciones.length + 1;
+    return `COT-${new Date().getFullYear()}-${String(n).padStart(3, "0")}`;
+}
+
+function addCotizacion(){
+    const leadId = cotLead.value;
+    const anio = document.getElementById("cotAnio").value.trim() || String(new Date().getFullYear());
+    const mes = document.getElementById("cotMes").value.trim();
+    const dirigidoA = document.getElementById("cotDirigido").value.trim();
+    const fecha = document.getElementById("cotFecha").value;
+    const cliente = document.getElementById("cotCliente").value.trim();
+    const producto = document.getElementById("cotProducto").value.trim();
+    const servicio = document.getElementById("cotServicioNombre").value.trim();
+    const monto = document.getElementById("cotMonto").value.trim();
+    const moneda = document.getElementById("cotMoneda").value.trim() || "PEN";
+    const estado = document.getElementById("cotEstado").value.trim() || "Enviado";
+    const remitente = document.getElementById("cotRemitente").value.trim();
+    const tipoOrganizacion = document.getElementById("cotTipoOrg").value.trim();
+    const tamanoOrganizacion = document.getElementById("cotTamanoOrg").value.trim();
+    const sectorOrganizacion = document.getElementById("cotSectorOrg").value.trim();
+    const alianzas = document.getElementById("cotAlianzasOrg").value.trim();
+    const actividadesOrganizacion = document.getElementById("cotActividadesOrg").value.trim();
+    const departamento = document.getElementById("cotDepartamentoOrg").value.trim();
+    const linkedin = document.getElementById("cotLinkedinOrg").value.trim();
+    const observacion = document.getElementById("cotObservacion").value.trim();
+    const link = document.getElementById("cotLink").value.trim();
+
+    if(!leadId) return setMsg(cotMsg, "status-err", "Selecciona el lead asociado a la cotizacion.");
+    if(!mes || !cliente || !servicio || !monto) return setMsg(cotMsg, "status-err", "Completa Mes, Cliente, Servicio y Monto.");
+
+    cotizaciones.push({
+        id: `Q-${Date.now()}`,
+        anio,
+        mes,
+        leadId,
+        cotId: buildCotizacionId(),
+        dirigidoA,
+        fecha,
+        cliente,
+        producto,
+        servicio,
+        monto,
+        moneda,
+        estado,
+        remitente,
+        tipoOrganizacion,
+        tamanoOrganizacion,
+        sectorOrganizacion,
+        alianzas,
+        actividadesOrganizacion,
+        departamento,
+        linkedin,
+        observacion,
+        link
+    });
+
+    ["cotAnio", "cotMes", "cotDirigido", "cotFecha", "cotCliente", "cotProducto", "cotServicioNombre", "cotMonto", "cotMoneda", "cotEstado", "cotRemitente", "cotTipoOrg", "cotTamanoOrg", "cotSectorOrg", "cotAlianzasOrg", "cotActividadesOrg", "cotDepartamentoOrg", "cotLinkedinOrg", "cotObservacion", "cotLink"].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.value = "";
+    });
+
+    save();
+    setMsg(cotMsg, "status-ok", "Cotizacion registrada correctamente.");
+}
+
+function syncSelectors(){
+    const selectedLead = cotLead ? cotLead.value : "";
+
+    const orgOptions = organizaciones.map(o => `<option value="${o.id}">${o.nombre} - ${o.ruc}</option>`).join("");
+    conOrg.innerHTML = `<option value="">Selecciona organizacion</option>${orgOptions}`;
+
+    const contactoOptions = contactos.map(c => {
+        const org = organizaciones.find(o => o.id === c.orgId);
+        return `<option value="${c.id}">${c.codigoIndividual ? `${c.codigoIndividual} - ` : ""}${c.nombreCompleto || c.nombre} (${org ? org.nombre : "Sin organizacion"})</option>`;
+    }).join("");
+    leadContacto.innerHTML = `<option value="">Selecciona contacto</option>${contactoOptions}`;
+    renderSelectedContactOrg();
+
+    const leadOptions = leads.map(l => `<option value="${l.id}">${l.codigoIndividual || l.contactoId || l.id} - ${l.nombre} (${l.empresa})</option>`).join("");
+    cotLead.innerHTML = `<option value="">Selecciona lead</option>${leadOptions}`;
+
+    if(selectedLead && leads.some(l => l.id === selectedLead)){
+        cotLead.value = selectedLead;
+    }
+}
+
+function render(){
+
+    nuevoCol.innerHTML="";
+    procesoCol.innerHTML="";
+    propuestaCol.innerHTML="";
+    cerradoCol.innerHTML="";
+
+    let t=0,p=0,pr=0,c=0;
+
+    if(leads.length===0){
+        const hint = '<div class="empty-state">Aun no hay leads. Crea uno arriba y luego pulsa <strong>Abrir</strong> en la tarjeta para mostrar el sidebar.</div>';
+        nuevoCol.innerHTML = hint;
+        procesoCol.innerHTML = hint;
+        propuestaCol.innerHTML = hint;
+        cerradoCol.innerHTML = hint;
+    }
+
+    leads.forEach((l,i)=>{
+
+        t++;
+        if(l.estado=="proceso")p++;
+        if(l.estado=="propuesta")pr++;
+        if(l.estado=="cerrado")c++;
+
+        let div=document.createElement("div");
+        div.className="lead";
+        div.innerHTML=`
+            <div class="lead-head">
+                <div>
+                    <b>${l.nombre}</b><br><small>${l.empresa}</small>
+                    <div class="lead-meta">
+                        <span class="pill">${l.codigoIndividual || l.contactoId || "Sin codigo"}</span>
+                        <span class="pill">${l.tipoOrg || "Sin tipo"}</span>
+                        <span class="pill">${l.sectorOrg || "Sin sector"}</span>
+                        <span class="pill">${l.canal || "Sin canal"}</span>
+                        <span class="pill">${l.servicio || "Sin servicio"}</span>
+                        <span class="pill">${l.encargado || "Sin encargado"}</span>
+                        <span class="pill">${l.nextDate || "Sin fecha"}</span>
+                        <span class="pill">${isLeadAlertActive(l) ? "Alerta activa" : "Sin alerta"}</span>
+                    </div>
+                </div>
+                <button type="button" class="lead-open" data-tippy-content="Abre el panel lateral para ver y editar estado, siguiente accion, historial y actividades.">Abrir</button>
+            </div>
+        `;
+        div.onclick=()=>openPanel(i);
+        div.querySelector(".lead-open").onclick=(event)=>{
+            event.stopPropagation();
+            openPanel(i);
+        };
+
+        if(l.estado=="nuevo")nuevoCol.appendChild(div);
+        if(l.estado=="proceso")procesoCol.appendChild(div);
+        if(l.estado=="propuesta")propuestaCol.appendChild(div);
+        if(l.estado=="cerrado")cerradoCol.appendChild(div);
+    });
+
+    total.innerText=t;
+    procesoKpi.innerText=p;
+    propuestaKpi.innerText=pr;
+    cerradoKpi.innerText=c;
+}
+
+function openPanel(i){
+    current=i;
+    let l=leads[i];
+    const contact = getContactById(l.contactoId);
+    const org = getLeadOrg(l);
+
+    panel.classList.add("open");
+    backdrop.classList.add("open");
+
+    pNombre.innerText=l.nombre;
+    pEmpresa.innerText=`${l.empresa} | ${l.servicio || "Sin servicio"} | Encargado: ${l.encargado || "No asignado"}`;
+    pCanal.value=l.canal || "";
+    pCreacion.value=l.creacion || "";
+    pNextDate.value=l.nextDate || "";
+    pCloseDate.value=l.closeDate || "";
+    pChallenge.value=l.challenge || "";
+    pEstado.value=l.estado;
+    pNext.value=l.next || "";
+    pHistorial.value=l.historial || "";
+    renderLeadMeta(l);
+
+    renderActs();
+}
+
+function closePanel(){
+    current = null;
+    panel.classList.remove("open");
+    backdrop.classList.remove("open");
+}
+
+function updateEstado(){
+    if(current===null) return;
+
+    leads[current].estado = pEstado.value;
+    leads[current].next = pNext.value;
+    if(pEstado.value === "cerrado" && !leads[current].closeDate){
+        leads[current].closeDate = new Date().toISOString().slice(0, 10);
+        pCloseDate.value = leads[current].closeDate;
+    }
+    save();
+    render();
+}
+
+function saveLeadContext(){
+    if(current===null) return;
+
+    leads[current].canal = pCanal.value.trim();
+    leads[current].creacion = pCreacion.value;
+    leads[current].nextDate = pNextDate.value;
+    leads[current].closeDate = pCloseDate.value;
+    leads[current].challenge = pChallenge.value.trim();
+    save();
+    render();
+}
+
+function saveNext(){
+    if(current===null) return;
+
+    leads[current].next = pNext.value;
+    save();
+}
+
+function saveHistorialLead(){
+    if(current===null) return;
+
+    leads[current].historial = pHistorial.value.trim();
+    save();
+}
+
+function addActivity(){
+    if(current===null) return;
+
+    let txt=nuevaAct.value.trim();
+    if(!txt)return;
+
+    leads[current].actividades.push({
+        txt,
+        fecha:new Date().toLocaleDateString()
+    });
+
+    nuevaAct.value="";
+    save();
+    renderActs();
+}
+
+function renderActs(){
+    actividades.innerHTML="";
+    if(current===null || !leads[current]) return;
+
+    leads[current].actividades.forEach(a=>{
+        actividades.innerHTML+=`<div class="activity">${a.txt}<br><small>${a.fecha}</small></div>`;
+    });
+}
+
+render();
+syncSelectors();
+renderSidebarStats();
+renderGuideStatus();
+renderMasterLists();
+renderCotizacionesList();
+applySidebarPreference();
+syncMenuExpanded();
+initInfoTooltips();
+
+orgSearch.addEventListener("input", () => {
+    orgPage = 1;
+    renderMasterLists();
+});
+
+conSearch.addEventListener("input", () => {
+    conPage = 1;
+    renderMasterLists();
+});
+
+conNombres.addEventListener("input", syncContactFullName);
+conApellidos.addEventListener("input", syncContactFullName);
+
+conOrg.addEventListener("change", renderSelectedContactOrg);
+
+leadContacto.addEventListener("change", () => {
+    const contacto = getContactById(leadContacto.value);
+    if(!contacto) return;
+    const org = getOrgById(contacto.orgId);
+    const leadEncargado = document.getElementById("leadEncargado");
+    const leadServicio = document.getElementById("leadServicio");
+    if(leadEncargado && !leadEncargado.value) leadEncargado.value = contacto.nombreCompleto || contacto.nombre || "";
+    if(leadServicio && !leadServicio.value && org?.tipoOrganizacion) leadServicio.value = "Servicio pendiente";
+    if(leadCanal && !leadCanal.value && org?.contactoVigente) leadCanal.value = "Referido";
+});
+
+if(leadFechaCreacion && !leadFechaCreacion.value){
+    leadFechaCreacion.value = new Date().toISOString().slice(0, 10);
+}
+
+orgPrev.addEventListener("click", () => {
+    orgPage--;
+    renderMasterLists();
+});
+
+orgNext.addEventListener("click", () => {
+    orgPage++;
+    renderMasterLists();
+});
+
+conPrev.addEventListener("click", () => {
+    conPage--;
+    renderMasterLists();
+});
+
+conNext.addEventListener("click", () => {
+    conPage++;
+    renderMasterLists();
+});
+
+cotSearch.addEventListener("input", () => {
+    cotPage = 1;
+    renderCotizacionesList();
+});
+
+cotPrev.addEventListener("click", () => {
+    cotPage--;
+    renderCotizacionesList();
+});
+
+cotNext.addEventListener("click", () => {
+    cotPage++;
+    renderCotizacionesList();
+});
+
+cotLead.addEventListener("change", () => {
+    if(!cotLead.value) return;
+    prefillCotizacionFromLead(cotLead.value);
+});
+
+exportOrgBtn.addEventListener("click", exportOrganizationsCsv);
+exportConBtn.addEventListener("click", exportContactsCsv);
+exportLeadsBtn.addEventListener("click", exportLeadsCsv);
+exportLeadDetailBtn.addEventListener("click", exportCurrentLeadCsv);
+exportCotBtn.addEventListener("click", exportCotizacionesCsv);
+</script>
+
+</body>
+</html>
