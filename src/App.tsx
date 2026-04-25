@@ -14,7 +14,6 @@ type View =
   | 'quotes'
   | 'quote'
   | 'bulk'
-  | 'users'
   | 'notifications'
 
 type LeadState = 'nuevo' | 'contacto' | 'propuesta' | 'cerrado'
@@ -54,7 +53,7 @@ type Contact = {
   cargo: string
   email: string
   telefono: string
-  estado: 'lead activo' | 'cliente' | 'inactivo'
+  estado: 'activo' | 'cliente' | 'inactivo'
   notes: string
   timeline: ContactTimelineEntry[]
 }
@@ -147,9 +146,18 @@ type ContactDraft = {
   telefono: string
   estado: Contact['estado']
   notes: string
+  leadServicio: string
+  leadEncargado: string
+  leadEstado: LeadState
+  leadNextActivity: string
+  leadCloseDate: string
+  leadChallenge: string
+  createLead: boolean
 }
 
 type LeadDraft = {
+  id: string | null
+  orgId: string
   contactoId: string
   servicio: string
   encargado: string
@@ -191,7 +199,6 @@ function nextId(prefix: string) {
   return `${prefix}-${entitySequence}`
 }
 
-const roles: UserRole[] = ['Admin', 'Proyectos', 'Comunicaciones', 'Gerencia']
 const leadColumns: Array<{ key: LeadState; label: string }> = [
   { key: 'nuevo', label: 'Nuevo' },
   { key: 'contacto', label: 'En contacto' },
@@ -299,7 +306,7 @@ function buildSeedState(): CRMState {
       cargo: 'Gerente Comercial',
       email: 'ana.ruiz@altomayo.pe',
       telefono: '+51 999 111 222',
-      estado: 'lead activo',
+      estado: 'activo',
       notes: 'Solicita apoyo para formulacion de proyecto.',
       timeline: [
         {
@@ -346,7 +353,7 @@ function buildSeedState(): CRMState {
       cargo: 'Jefa de Innovacion',
       email: 'marta.vega@bioandina.pe',
       telefono: '+51 955 444 555',
-      estado: 'lead activo',
+      estado: 'activo',
       notes: 'Explora proyecto con componente de laboratorio.',
       timeline: [
         {
@@ -516,13 +523,22 @@ function createContactDraft(contact?: Contact): ContactDraft {
     cargo: contact?.cargo ?? '',
     email: contact?.email ?? '',
     telefono: contact?.telefono ?? '',
-    estado: contact?.estado ?? 'lead activo',
+    estado: contact?.estado ?? 'activo',
     notes: contact?.notes ?? '',
+    leadServicio: '',
+    leadEncargado: 'BioActvia',
+    leadEstado: 'nuevo',
+    leadNextActivity: '',
+    leadCloseDate: '',
+    leadChallenge: '',
+    createLead: false,
   }
 }
 
 function createLeadDraft(lead?: Lead): LeadDraft {
   return {
+    id: lead?.id ?? null,
+    orgId: lead?.orgId ?? '',
     contactoId: lead?.contactoId ?? '',
     servicio: lead?.servicio ?? '',
     encargado: lead?.encargado ?? 'BioActvia',
@@ -578,6 +594,25 @@ function parseCsv(text: string) {
     )
 }
 
+function escapeCsvCell(value: unknown) {
+  const text = String(value ?? '')
+  if (/[,\n"]/u.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`
+  }
+  return text
+}
+
+function downloadCsv(filename: string, rows: string[][]) {
+  const csv = rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
+
 function isNearMatch(source: string, target: string) {
   const a = normalize(source)
   const b = normalize(target)
@@ -604,7 +639,19 @@ function App() {
   })
   const [view, setView] = useState<View>('dashboard')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [organizationModalOpen, setOrganizationModalOpen] = useState(false)
+  const [contactModalOpen, setContactModalOpen] = useState(false)
+  const [leadModalOpen, setLeadModalOpen] = useState(false)
+  const [leadContactLocked, setLeadContactLocked] = useState(false)
+  const [contactDetailModalOpen, setContactDetailModalOpen] = useState(false)
+  const [leadDetailModalOpen, setLeadDetailModalOpen] = useState(false)
+  const [quoteDetailModalOpen, setQuoteDetailModalOpen] = useState(false)
+  const [quoteFormModalOpen, setQuoteFormModalOpen] = useState(false)
+  const [quoteDraft, setQuoteDraft] = useState<QuoteDraft>(() => createQuoteDraft())
   const [searchQuery, setSearchQuery] = useState('')
+  const [organizationSearch, setOrganizationSearch] = useState('')
+  const [organizationSectorFilter, setOrganizationSectorFilter] = useState('todos')
+  const [organizationStatusFilter, setOrganizationStatusFilter] = useState('todos')
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>('')
   const [selectedContactId, setSelectedContactId] = useState<string>('')
   const [selectedLeadId, setSelectedLeadId] = useState<string>('')
@@ -612,18 +659,20 @@ function App() {
   const [organizationDraft, setOrganizationDraft] = useState<OrganizationDraft>(() => createOrganizationDraft())
   const [contactDraft, setContactDraft] = useState<ContactDraft>(() => createContactDraft())
   const [leadDraft, setLeadDraft] = useState<LeadDraft>(() => createLeadDraft())
-  const [, setQuoteDraft] = useState<QuoteDraft>(() => createQuoteDraft())
   const [leadActivityType, setLeadActivityType] = useState<LeadActivity['type']>('Llamada')
   const [leadActivityNotes, setLeadActivityNotes] = useState('')
   const [leadActivityResult, setLeadActivityResult] = useState('')
   const [leadActivityDate, setLeadActivityDate] = useState(todayIso)
-  const [contactTimelineType, setContactTimelineType] = useState<ContactTimelineEntry['type']>('Llamada')
-  const [contactTimelineTitle, setContactTimelineTitle] = useState('')
-  const [contactTimelineResult, setContactTimelineResult] = useState('')
-  const [contactTimelineDate, setContactTimelineDate] = useState(todayIso)
+  const [leadActivityEmailTo, setLeadActivityEmailTo] = useState('')
   const [bulkRows, setBulkRows] = useState<BulkRow[]>([])
   const [bulkFeedback, setBulkFeedback] = useState('Sube un archivo CSV o XLSX para ver el preview y resolver duplicados.')
   const [bulkMode, setBulkMode] = useState<'crear' | 'actualizar' | 'ignorar'>('crear')
+  const [bulkExportType, setBulkExportType] = useState<'contactos' | 'leads' | 'organizaciones'>('contactos')
+  const [bulkExportOrganizationId, setBulkExportOrganizationId] = useState('todas')
+  const [bulkExportSector, setBulkExportSector] = useState('todos')
+  const [bulkExportOrgType, setBulkExportOrgType] = useState('todos')
+  const [bulkExportContactState, setBulkExportContactState] = useState<'todos' | Contact['estado']>('todos')
+  const [bulkExportOnlyEmail, setBulkExportOnlyEmail] = useState(false)
   const [orgTab, setOrgTab] = useState<'contactos' | 'leads' | 'cotizaciones'>('contactos')
   const [quoteFilter, setQuoteFilter] = useState<'todas' | QuoteState>('todas')
 
@@ -639,7 +688,7 @@ function App() {
     document.title = 'BioActvia | CRM Comercial'
   }, [])
 
-  const activeOrganizationId = selectedOrganizationId || state.organizations[0]?.id || ''
+  const activeOrganizationId = selectedOrganizationId || ''
   const activeContactId = selectedContactId || state.contacts[0]?.id || ''
   const activeLeadId = selectedLeadId || state.leads[0]?.id || ''
   const activeQuoteId = selectedQuoteId || state.quotes[0]?.id || ''
@@ -784,6 +833,37 @@ function App() {
     [selectedOrganization?.id, state.quotes],
   )
 
+  const selectedContactLeads = useMemo(
+    () => state.leads.filter((lead) => lead.contactoId === selectedContact?.id),
+    [selectedContact?.id, state.leads],
+  )
+
+  const organizationSectorOptions = useMemo(
+    () => Array.from(new Set(state.organizations.map((org) => org.sector).filter(Boolean))).sort(),
+    [state.organizations],
+  )
+
+  const organizationStatusOptions = useMemo(
+    () => Array.from(new Set(state.organizations.map((org) => org.estadoComercial).filter(Boolean))).sort(),
+    [state.organizations],
+  )
+
+  const organizationTypeOptions = useMemo(
+    () => Array.from(new Set(state.organizations.map((org) => org.tipo).filter(Boolean))).sort(),
+    [state.organizations],
+  )
+
+  const filteredOrganizations = useMemo(() => {
+    const lookupValue = normalize(organizationSearch)
+
+    return state.organizations.filter((org) => {
+      const matchesSearch = !lookupValue || normalize([org.nombre, org.nombreLegal, org.ruc].join(' ')).includes(lookupValue)
+      const matchesSector = organizationSectorFilter === 'todos' || org.sector === organizationSectorFilter
+      const matchesStatus = organizationStatusFilter === 'todos' || org.estadoComercial === organizationStatusFilter
+      return matchesSearch && matchesSector && matchesStatus
+    })
+  }, [organizationSearch, organizationSectorFilter, organizationStatusFilter, state.organizations])
+
   const selectedLeadContact = selectedLead ? state.contacts.find((item) => item.id === selectedLead.contactoId) ?? null : null
   const selectedLeadOrg = selectedLead ? state.organizations.find((item) => item.id === selectedLead.orgId) ?? null : null
   const selectedQuoteLead = selectedQuote ? state.leads.find((item) => item.id === selectedQuote.leadId) ?? null : null
@@ -799,6 +879,42 @@ function App() {
     setOrganizationDraft(createOrganizationDraft(org))
   }
 
+  function closeOrganizationForm() {
+    setOrganizationModalOpen(false)
+    resetOrganizationDraft()
+  }
+
+  function closeContactForm() {
+    setContactModalOpen(false)
+    setContactDraft(createContactDraft())
+  }
+
+  function closeLeadForm() {
+    setLeadModalOpen(false)
+    setLeadContactLocked(false)
+    setLeadDraft(createLeadDraft())
+  }
+
+  function closeContactDetail() {
+    setContactDetailModalOpen(false)
+    setSelectedContactId('')
+  }
+
+  function closeLeadDetail() {
+    setLeadDetailModalOpen(false)
+    setSelectedLeadId('')
+  }
+
+  function closeQuoteDetail() {
+    setQuoteDetailModalOpen(false)
+    setSelectedQuoteId('')
+  }
+
+  function closeQuoteForm() {
+    setQuoteFormModalOpen(false)
+    setQuoteDraft(createQuoteDraft())
+  }
+
   function resetQuoteDraft(quote?: Quote) {
     setQuoteDraft(createQuoteDraft(quote))
   }
@@ -808,19 +924,52 @@ function App() {
     setView('organization')
   }
 
+  function showOrganizationList() {
+    setSelectedOrganizationId('')
+    setView('organization')
+  }
+
+  function deleteOrganization(id: string) {
+    const org = state.organizations.find((item) => item.id === id)
+    if (!org) return
+
+    const confirmed = window.confirm(`Eliminar ${org.nombre} también borrará sus contactos, leads y cotizaciones asociadas.`)
+    if (!confirmed) return
+
+    setState((current) => ({
+      ...current,
+      organizations: current.organizations.filter((item) => item.id !== id),
+      contacts: current.contacts.filter((item) => item.orgId !== id),
+      leads: current.leads.filter((item) => item.orgId !== id),
+      quotes: current.quotes.filter((item) => item.orgId !== id),
+    }))
+
+    if (selectedOrganizationId === id) {
+      setSelectedOrganizationId('')
+    }
+
+    setSelectedContactId('')
+    setSelectedLeadId('')
+    setSelectedQuoteId('')
+    setView('organization')
+  }
+
   function openContactDetail(id: string) {
     setSelectedContactId(id)
-    setView('contact')
+    setContactDetailModalOpen(true)
+    setMenuOpen(false)
   }
 
   function openLeadDetail(id: string) {
     setSelectedLeadId(id)
-    setView('lead')
+    setLeadDetailModalOpen(true)
+    setMenuOpen(false)
   }
 
   function openQuoteDetail(id: string) {
     setSelectedQuoteId(id)
-    setView('quote')
+    setQuoteDetailModalOpen(true)
+    setMenuOpen(false)
   }
 
   function fillOrganizationFromRuc(ruc: string) {
@@ -846,7 +995,8 @@ function App() {
 
   function openOrganizationForm(org?: Organization) {
     resetOrganizationDraft(org)
-    navigate('organization-form')
+    setOrganizationModalOpen(true)
+    setMenuOpen(false)
   }
 
   function openContactForm(contact?: Contact, orgHintId?: string) {
@@ -859,43 +1009,93 @@ function App() {
       }
     }
     setContactDraft(nextDraft)
-    navigate('contact-form')
+    setContactModalOpen(true)
+    setMenuOpen(false)
   }
 
-  function openLeadForm(contactId?: string, orgId?: string) {
-    const nextDraft = createLeadDraft()
-    if (contactId) nextDraft.contactoId = contactId
-    if (orgId && !contactId) {
-      const contact = state.contacts.find((item) => item.orgId === orgId)
-      if (contact) nextDraft.contactoId = contact.id
+  function openLeadForm(contact?: Contact, lead?: Lead) {
+    const nextDraft = createLeadDraft(lead)
+    if (contact) {
+      nextDraft.orgId = contact.orgId
+      nextDraft.contactoId = lead?.contactoId ?? contact.id
+    }
+    if (!contact && lead) {
+      const leadContact = state.contacts.find((item) => item.id === lead.contactoId)
+      if (leadContact) {
+        nextDraft.orgId = leadContact.orgId
+      }
     }
     setLeadDraft(nextDraft)
-    navigate('pipeline')
+    setLeadContactLocked(!!contact)
+    setLeadModalOpen(true)
+    setMenuOpen(false)
   }
 
   function createQuoteFromLead(lead: Lead) {
-    const nextQuote: Quote = {
-      id: nextId('cot'),
+    setSelectedLeadId(lead.id)
+    setQuoteDraft({
+      id: null,
       leadId: lead.id,
       cliente: selectedLeadOrg?.nombre ?? '',
-      monto: 0,
+      monto: '',
       moneda: 'PEN',
       estado: 'borrador',
       fecha: todayIso,
       servicio: lead.servicio,
       documento: '',
+    })
+    setQuoteFormModalOpen(true)
+  }
+
+  function saveQuote() {
+    const lead = state.leads.find((item) => item.id === quoteDraft.leadId)
+    if (!lead) return
+
+    const org = state.organizations.find((item) => item.id === lead.orgId)
+    const nextQuote: Quote = {
+      id: quoteDraft.id ?? nextId('cot'),
+      leadId: lead.id,
+      cliente: quoteDraft.cliente.trim() || org?.nombre || 'Sin cliente',
+      monto: Number(quoteDraft.monto || 0),
+      moneda: quoteDraft.moneda || 'PEN',
+      estado: quoteDraft.estado,
+      fecha: quoteDraft.fecha || todayIso,
+      servicio: quoteDraft.servicio.trim() || lead.servicio,
+      documento: quoteDraft.documento.trim(),
       contactoId: lead.contactoId,
       orgId: lead.orgId,
       updatedAt: todayIso,
     }
 
-    setState((current) => ({
-      ...current,
-      quotes: [nextQuote, ...current.quotes],
-    }))
+    const leadActivity: LeadActivity = {
+      id: nextId('act'),
+      type: 'Seguimiento',
+      date: todayIso,
+      notes: 'Cotizacion creada',
+      result: `Se genero la cotizacion ${nextQuote.id} para ${nextQuote.cliente}.`,
+    }
+
+    setState((current) => {
+      const exists = current.quotes.some((item) => item.id === nextQuote.id)
+      return {
+        ...current,
+        quotes: exists ? current.quotes.map((item) => (item.id === nextQuote.id ? nextQuote : item)) : [nextQuote, ...current.quotes],
+        leads: current.leads.map((item) =>
+          item.id === lead.id
+            ? {
+                ...item,
+                activities: [leadActivity, ...item.activities],
+                historial: [item.historial, leadActivity.notes, leadActivity.result].filter(Boolean).join(' | '),
+              }
+            : item,
+        ),
+      }
+    })
+
     setSelectedQuoteId(nextQuote.id)
-    resetQuoteDraft(nextQuote)
-    navigate('quote')
+    setQuoteFormModalOpen(false)
+    setQuoteDetailModalOpen(true)
+    setQuoteDraft(createQuoteDraft(nextQuote))
   }
 
   function saveOrganization() {
@@ -927,13 +1127,16 @@ function App() {
       }
     })
     setSelectedOrganizationId(payload.id)
-    navigate('organization')
+    setOrganizationModalOpen(false)
+    setView('organization')
   }
 
   function saveContact() {
     const org = state.organizations.find((item) => item.id === contactDraft.orgId)
     if (!org) return
     if (!contactDraft.nombre || !contactDraft.apellidos || !contactDraft.email) return
+    const isNewContact = !contactDraft.id
+    if (isNewContact && contactDraft.createLead && !contactDraft.leadServicio.trim()) return
 
     const payload: Contact = {
       id: contactDraft.id ?? nextId('con'),
@@ -958,17 +1161,43 @@ function App() {
           ],
     }
 
+    const leadPayload: Lead | null = isNewContact && contactDraft.createLead
+      ? {
+          id: nextId('lead'),
+          contactoId: payload.id,
+          orgId: org.id,
+          servicio: contactDraft.leadServicio.trim(),
+          encargado: contactDraft.leadEncargado.trim() || 'BioActvia',
+          estado: contactDraft.leadEstado,
+          nextActivity: contactDraft.leadNextActivity,
+          closeDate: contactDraft.leadCloseDate,
+          challenge: contactDraft.leadChallenge,
+          historial: 'Lead creado desde el alta de contacto.',
+          activities: [],
+        }
+      : null
+
     setState((current) => {
       const exists = current.contacts.some((item) => item.id === payload.id)
+      const nextContacts = exists ? current.contacts.map((item) => (item.id === payload.id ? payload : item)) : [payload, ...current.contacts]
+      const nextLeads = leadPayload ? [leadPayload, ...current.leads] : current.leads
+
       return {
         ...current,
-        contacts: exists ? current.contacts.map((item) => (item.id === payload.id ? payload : item)) : [payload, ...current.contacts],
+          contacts: nextContacts,
+          leads: nextLeads,
       }
     })
 
     setSelectedContactId(payload.id)
     setSelectedOrganizationId(org.id)
-    navigate('contact')
+    setContactModalOpen(false)
+    if (leadPayload) {
+      setSelectedLeadId(leadPayload.id)
+      setLeadDetailModalOpen(true)
+    } else {
+      setContactDetailModalOpen(true)
+    }
   }
 
   function saveLead() {
@@ -979,7 +1208,7 @@ function App() {
     if (!org) return
 
     const payload: Lead = {
-      id: nextId('lead'),
+      id: leadDraft.id ?? nextId('lead'),
       contactoId: contact.id,
       orgId: org.id,
       servicio: leadDraft.servicio || 'Servicio pendiente',
@@ -994,10 +1223,32 @@ function App() {
 
     setState((current) => ({
       ...current,
-      leads: [payload, ...current.leads],
+      leads: current.leads.some((item) => item.id === payload.id)
+        ? current.leads.map((item) => (item.id === payload.id ? payload : item))
+        : [payload, ...current.leads],
     }))
     setSelectedLeadId(payload.id)
-    navigate('lead')
+    setLeadModalOpen(false)
+    setLeadDetailModalOpen(true)
+  }
+
+  function deleteLead(id: string) {
+    const lead = state.leads.find((item) => item.id === id)
+    if (!lead) return
+
+    const contact = state.contacts.find((item) => item.id === lead.contactoId)
+    const confirmed = window.confirm(`Eliminar el lead de ${contact ? `${contact.nombre} ${contact.apellidos}` : 'este contacto'}?`)
+    if (!confirmed) return
+
+    setState((current) => ({
+      ...current,
+      leads: current.leads.filter((item) => item.id !== id),
+    }))
+
+    if (selectedLeadId === id) {
+      setSelectedLeadId('')
+      setLeadDetailModalOpen(false)
+    }
   }
 
   function updateLeadField(id: string, field: keyof Lead, value: string) {
@@ -1009,14 +1260,20 @@ function App() {
 
   function addLeadActivity() {
     if (!selectedLead) return
-    if (!leadActivityNotes.trim() && !leadActivityResult.trim()) return
+
+    const notes = leadActivityType === 'Email'
+      ? [leadActivityEmailTo.trim() ? `Destinatario: ${leadActivityEmailTo.trim()}` : '', leadActivityNotes.trim()].filter(Boolean).join(' | ')
+      : leadActivityNotes.trim()
+    const result = leadActivityResult.trim()
+
+    if (!notes && !result) return
 
     const entry: LeadActivity = {
       id: nextId('act'),
       type: leadActivityType,
       date: leadActivityDate,
-      notes: leadActivityNotes.trim(),
-      result: leadActivityResult.trim(),
+      notes,
+      result,
     }
 
     setState((current) => ({
@@ -1035,37 +1292,8 @@ function App() {
     setLeadActivityNotes('')
     setLeadActivityResult('')
     setLeadActivityType('Llamada')
+    setLeadActivityEmailTo('')
     setLeadActivityDate(todayIso)
-  }
-
-  function addContactTimeline() {
-    if (!selectedContact) return
-    if (!contactTimelineTitle.trim() && !contactTimelineResult.trim()) return
-
-    const entry: ContactTimelineEntry = {
-      id: nextId('tl'),
-      type: contactTimelineType,
-      date: contactTimelineDate,
-      title: contactTimelineTitle.trim() || 'Interaccion registrada',
-      result: contactTimelineResult.trim(),
-    }
-
-    setState((current) => ({
-      ...current,
-      contacts: current.contacts.map((contact) =>
-        contact.id === selectedContact.id
-          ? {
-              ...contact,
-              timeline: [entry, ...contact.timeline],
-              notes: [contact.notes, entry.result].filter(Boolean).join(' | '),
-            }
-          : contact,
-      ),
-    }))
-    setContactTimelineType('Llamada')
-    setContactTimelineTitle('')
-    setContactTimelineResult('')
-    setContactTimelineDate(todayIso)
   }
 
   function updateQuoteField(field: keyof Quote, value: string) {
@@ -1182,7 +1410,7 @@ function App() {
                 cargo: 'Importado',
                 email: row.email || `importado-${nextId('mail')}@bioactvia.pe`,
                 telefono: '',
-                estado: 'lead activo',
+                estado: 'activo',
                 notes: 'Importado desde carga masiva.',
                 timeline: [
                   {
@@ -1204,6 +1432,98 @@ function App() {
 
     setBulkFeedback('Carga procesada. Los duplicados exactos quedaron listos para actualización según el modo elegido.')
     navigate('organization')
+  }
+
+  function exportBulkData() {
+    const selectedOrganizations = state.organizations.filter((org) => {
+      const matchesOrganization = bulkExportOrganizationId === 'todas' || org.id === bulkExportOrganizationId
+      const matchesSector = bulkExportSector === 'todos' || org.sector === bulkExportSector
+      const matchesType = bulkExportOrgType === 'todos' || org.tipo === bulkExportOrgType
+      return matchesOrganization && matchesSector && matchesType
+    })
+
+    let rows: string[][] = []
+
+    if (bulkExportType === 'organizaciones') {
+      rows = [
+        ['RUC', 'Nombre', 'Razon social', 'Sector', 'Tipo', 'Estado comercial', 'Ubicacion', 'LinkedIn'],
+        ...selectedOrganizations.map((org) => [
+          org.ruc,
+          org.nombre,
+          org.nombreLegal,
+          org.sector,
+          org.tipo,
+          org.estadoComercial,
+          org.ubicacion,
+          org.linkedin,
+        ]),
+      ]
+    }
+
+    if (bulkExportType === 'contactos') {
+      const selectedOrgIds = selectedOrganizations.map((org) => org.id)
+      const contacts = state.contacts.filter((contact) => {
+        const org = state.organizations.find((item) => item.id === contact.orgId)
+        const matchesOrganization = bulkExportOrganizationId === 'todas' || selectedOrgIds.includes(contact.orgId)
+        const matchesState = bulkExportContactState === 'todos' || contact.estado === bulkExportContactState
+        const matchesEmail = !bulkExportOnlyEmail || Boolean(contact.email)
+        return matchesOrganization && matchesState && matchesEmail && org !== undefined
+      })
+
+      rows = [
+        ['Organizacion', 'Sector', 'Tipo organizacion', 'Contacto', 'Cargo', 'Email', 'Telefono', 'Estado'],
+        ...contacts.map((contact) => {
+          const org = state.organizations.find((item) => item.id === contact.orgId)
+          return [
+            org?.nombre ?? '',
+            org?.sector ?? '',
+            org?.tipo ?? '',
+            `${contact.nombre} ${contact.apellidos}`,
+            contact.cargo,
+            contact.email,
+            contact.telefono,
+            contact.estado,
+          ]
+        }),
+      ]
+    }
+
+    if (bulkExportType === 'leads') {
+      const leads = state.leads.filter((lead) => {
+        const org = state.organizations.find((item) => item.id === lead.orgId)
+        const matchesOrganization = bulkExportOrganizationId === 'todas' || lead.orgId === bulkExportOrganizationId
+        const matchesSector = bulkExportSector === 'todos' || org?.sector === bulkExportSector
+        const matchesType = bulkExportOrgType === 'todos' || org?.tipo === bulkExportOrgType
+        return matchesOrganization && matchesSector && matchesType
+      })
+
+      rows = [
+        ['Organizacion', 'Sector', 'Tipo organizacion', 'Lead', 'Servicio', 'Estado', 'Proxima actividad', 'Cierre'],
+        ...leads.map((lead) => {
+          const org = state.organizations.find((item) => item.id === lead.orgId)
+          const contact = state.contacts.find((item) => item.id === lead.contactoId)
+          return [
+            org?.nombre ?? '',
+            org?.sector ?? '',
+            org?.tipo ?? '',
+            contact ? `${contact.nombre} ${contact.apellidos}` : lead.contactoId,
+            lead.servicio,
+            lead.estado,
+            lead.nextActivity,
+            lead.closeDate,
+          ]
+        }),
+      ]
+    }
+
+    if (rows.length === 0) {
+      setBulkFeedback('No hay datos para exportar con los filtros elegidos.')
+      return
+    }
+
+    const suffix = bulkExportType === 'organizaciones' ? 'organizaciones' : bulkExportType === 'contactos' ? 'contactos' : 'leads'
+    downloadCsv(`bioactvia-${suffix}-${todayIso}.csv`, rows)
+    setBulkFeedback(`Exportacion lista: ${rows.length - 1} registros exportados con filtros aplicados.`)
   }
 
   function changeLeadStatus(leadId: string, nextStatus: LeadState) {
@@ -1293,6 +1613,29 @@ function App() {
           </article>
         </div>
 
+        <div className="kpi-grid">
+          <article className="glass-card kpi-card">
+            <span>Organizaciones</span>
+            <strong>{state.organizations.length}</strong>
+            <small>Base comercial total</small>
+          </article>
+          <article className="glass-card kpi-card">
+            <span>Contactos</span>
+            <strong>{state.contacts.length}</strong>
+            <small>Personas registradas</small>
+          </article>
+          <article className="glass-card kpi-card">
+            <span>Leads cerrados</span>
+            <strong>{state.leads.filter((lead) => lead.estado === 'cerrado').length}</strong>
+            <small>Oportunidades finalizadas</small>
+          </article>
+          <article className="glass-card kpi-card">
+            <span>Cotizaciones</span>
+            <strong>{state.quotes.length}</strong>
+            <small>Totales registradas</small>
+          </article>
+        </div>
+
         <div className="dashboard-grid">
           <article className="glass-card panel-card">
             <div className="card-head">
@@ -1356,20 +1699,36 @@ function App() {
             <div className="card-head">
               <div>
                 <h2>Alertas operativas</h2>
-                <p>Leads sin seguimiento y cotizaciones sin actualizar.</p>
+                <p>Resumen rapido de lo que requiere atencion hoy.</p>
               </div>
             </div>
-            <div className="stack-list">
+            <div className="kpi-grid compact-kpi-grid">
+              <article className="glass-card kpi-card">
+                <span>Leads</span>
+                <strong>{dashboardAlerts.staleLeads.length}</strong>
+                <small>Sin seguimiento</small>
+              </article>
+              <article className="glass-card kpi-card">
+                <span>Cotizaciones</span>
+                <strong>{dashboardAlerts.staleQuotes.length}</strong>
+                <small>Sin actualizar</small>
+              </article>
+              <article className="glass-card kpi-card">
+                <span>Hoy</span>
+                <strong>{upcomingLeads.filter((lead) => lead.nextActivity === todayIso).length}</strong>
+                <small>Tareas vencen hoy</small>
+              </article>
+            </div>
+            <div className="button-row">
+              <button type="button" className="secondary-btn" onClick={() => navigate('notifications')}>
+                Ver alertas detalladas
+              </button>
+            </div>
+            <div className="inline-notice">
               {notifications.length > 0 ? (
-                notifications.map((item) => (
-                  <div key={item.id} className={`notice notice-${item.level}`}>
-                    <strong>{item.title}</strong>
-                    <span>{item.detail}</span>
-                    <small>{item.due}</small>
-                  </div>
-                ))
+                <span>{notifications.length} recordatorios activos listos para revisar.</span>
               ) : (
-                <div className="empty-state">No hay alertas activas ahora mismo.</div>
+                <span>No hay alertas activas ahora mismo.</span>
               )}
             </div>
           </article>
@@ -1488,8 +1847,102 @@ function App() {
     if (!selectedOrganization) {
       return (
         <section className="view-grid">
-          {renderSectionTitle('Vista de organización', 'Selecciona una empresa para centralizar contactos, leads y cotizaciones.')}
-          <div className="empty-state">No hay una organizacion seleccionada.</div>
+          {renderSectionTitle(
+            'Vista de organización',
+            'Selecciona una empresa para verla, editarla o eliminarla. También puedes crear una nueva desde aquí.',
+            <div className="button-row">
+              <button type="button" className="primary-btn" onClick={() => openOrganizationForm()}>
+                Agregar organizacion
+              </button>
+            </div>,
+          )}
+
+          <article className="glass-card form-card organization-filters">
+            <div className="form-grid two-cols">
+              <label>
+                Buscar organización
+                <input
+                  value={organizationSearch}
+                  onChange={(event) => setOrganizationSearch(event.target.value)}
+                  placeholder="Nombre, razón social o RUC"
+                />
+              </label>
+              <label>
+                Sector
+                <select value={organizationSectorFilter} onChange={(event) => setOrganizationSectorFilter(event.target.value)}>
+                  <option value="todos">Todos</option>
+                  {organizationSectorOptions.map((sector) => (
+                    <option key={sector} value={sector}>
+                      {sector}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Estado comercial
+                <select value={organizationStatusFilter} onChange={(event) => setOrganizationStatusFilter(event.target.value)}>
+                  <option value="todos">Todos</option>
+                  {organizationStatusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Acciones
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  onClick={() => {
+                    setOrganizationSearch('')
+                    setOrganizationSectorFilter('todos')
+                    setOrganizationStatusFilter('todos')
+                  }}
+                >
+                  Limpiar filtros
+                </button>
+              </label>
+            </div>
+          </article>
+
+          <article className="glass-card list-card">
+            <div className="card-head">
+              <div>
+                <h2>Organizaciones</h2>
+                <p>{filteredOrganizations.length} de {state.organizations.length} registros</p>
+              </div>
+            </div>
+            <div className="stack-list">
+              {filteredOrganizations.map((org) => {
+                const contactsCount = state.contacts.filter((item) => item.orgId === org.id).length
+                const leadsCount = state.leads.filter((item) => item.orgId === org.id).length
+                const quotesCount = state.quotes.filter((item) => item.orgId === org.id).length
+
+                return (
+                  <div key={org.id} className="organization-row">
+                    <button type="button" className="list-row organization-row-main" onClick={() => openOrganizationDetail(org.id)}>
+                      <strong>{org.nombre}</strong>
+                      <span>{org.ruc} · {org.sector}</span>
+                      <small>{contactsCount} contactos · {leadsCount} leads · {quotesCount} cotizaciones</small>
+                    </button>
+                    <div className="button-row organization-row-actions">
+                      <button type="button" className="secondary-btn" onClick={() => openOrganizationDetail(org.id)}>
+                        Ver
+                      </button>
+                      <button type="button" className="primary-btn" onClick={() => openOrganizationForm(org)}>
+                        Editar
+                      </button>
+                      <button type="button" className="danger-btn" onClick={() => deleteOrganization(org.id)}>
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+              {filteredOrganizations.length === 0 ? <div className="empty-state">No hay organizaciones con esos filtros.</div> : null}
+            </div>
+          </article>
         </section>
       )
     }
@@ -1498,16 +1951,19 @@ function App() {
       <section className="view-grid">
         {renderSectionTitle(
           'Detalle de organización',
-          'Toda la relación comercial gira alrededor del RUC y la identidad de la empresa.',
+          'Toda la relación comercial gira alrededor del RUC, los contactos, los leads y las cotizaciones de la empresa.',
           <div className="button-row">
-            <button type="button" className="secondary-btn" onClick={() => openContactForm(undefined, selectedOrganization.id)}>
-              Crear contacto
+            <button type="button" className="secondary-btn back-arrow-btn" onClick={showOrganizationList} aria-label="Volver al listado de organizaciones">
+              ←
             </button>
-            <button type="button" className="primary-btn" onClick={() => openLeadForm(undefined, selectedOrganization.id)}>
-              Crear lead
+            <button type="button" className="primary-btn" onClick={() => openOrganizationForm()}>
+              Agregar organizacion
             </button>
             <button type="button" className="ghost-btn" onClick={() => openOrganizationForm(selectedOrganization)}>
               Editar organización
+            </button>
+            <button type="button" className="danger-btn" onClick={() => deleteOrganization(selectedOrganization.id)}>
+              Eliminar organización
             </button>
           </div>,
         )}
@@ -1549,8 +2005,13 @@ function App() {
         {orgTab === 'contactos' ? (
           <article className="glass-card list-card">
             <div className="card-head">
-              <h2>Contactos asociados</h2>
-              <p>{orgContacts.length} registros</p>
+              <div>
+                <h2>Contactos asociados</h2>
+                <p>{orgContacts.length} registros</p>
+              </div>
+              <button type="button" className="primary-btn" onClick={() => openContactForm(undefined, selectedOrganization.id)}>
+                Crear contacto
+              </button>
             </div>
             <div className="stack-list">
               {orgContacts.map((contact) => (
@@ -1617,6 +2078,7 @@ function App() {
     }
 
     const org = state.organizations.find((item) => item.id === selectedContact.orgId)
+    const contactAlreadyHasLead = selectedContactLeads.length > 0
 
     return (
       <section className="view-grid">
@@ -1624,8 +2086,8 @@ function App() {
           'Detalle de contacto',
           'El historial narrativo se convierte en una linea de tiempo filtrable y accionable.',
           <div className="button-row">
-            <button type="button" className="secondary-btn" onClick={() => openLeadForm(selectedContact.id)}>
-              Crear lead
+            <button type="button" className="primary-btn" onClick={() => openContactForm()}>
+              Agregar contacto
             </button>
             <button type="button" className="primary-btn" onClick={() => openContactForm(selectedContact)}>
               Editar contacto
@@ -1659,69 +2121,71 @@ function App() {
           </div>
         </div>
 
-        <div className="detail-grid">
-          <article className="glass-card list-card">
-            <div className="card-head">
-              <h2>Timeline</h2>
-              <p>Actividades, cambios de estado y notas.</p>
+        <article className="glass-card list-card">
+          <div className="card-head">
+            <div>
+              <h2>Leads asociados</h2>
+              <p>{selectedContactLeads.length} registros</p>
             </div>
-            <div className="timeline">
-              {selectedContact.timeline.length > 0 ? (
-                selectedContact.timeline.map((entry) => (
-                  <div key={entry.id} className="timeline-item">
-                    <span className="timeline-dot" />
-                    <div>
-                      <strong>{entry.type} · {entry.title}</strong>
-                      <p>{entry.result}</p>
-                      <small>{formatDate(entry.date)}</small>
-                    </div>
+            {contactAlreadyHasLead ? <span className="lead-status-note">Ya convertido a lead</span> : <button type="button" className="primary-btn" onClick={() => openLeadForm(selectedContact)}>
+              Convertir a lead
+            </button>}
+          </div>
+          <div className="stack-list">
+            {selectedContactLeads.length > 0 ? (
+              selectedContactLeads.map((lead) => (
+                <div key={lead.id} className="organization-row">
+                  <button type="button" className="list-row organization-row-main" onClick={() => openLeadDetail(lead.id)}>
+                    <strong>{lead.servicio}</strong>
+                    <span>{lead.estado} · {formatDate(lead.nextActivity) || 'Sin fecha'}</span>
+                    <small>{lead.encargado} · Cierre {lead.closeDate || 'pendiente'}</small>
+                  </button>
+                  <div className="button-row organization-row-actions">
+                    <button type="button" className="secondary-btn" onClick={() => openLeadDetail(lead.id)}>
+                      Ver
+                    </button>
+                    <button type="button" className="primary-btn" onClick={() => openLeadForm(selectedContact, lead)}>
+                      Editar
+                    </button>
+                    <button type="button" className="danger-btn" onClick={() => deleteLead(lead.id)}>
+                      Eliminar
+                    </button>
                   </div>
-                ))
-              ) : (
-                <div className="empty-state">Todavia no hay movimientos registrados.</div>
-              )}
-            </div>
-          </article>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">Este contacto aún no tiene leads asociados.</div>
+            )}
+          </div>
+        </article>
 
-          <article className="glass-card list-card">
-            <div className="card-head">
-              <h2>Registrar interaccion</h2>
-              <p>La bitacora queda estructurada, no en texto libre suelto.</p>
-            </div>
-            <div className="form-stack compact">
-              <label>
-                Tipo de actividad
-                <select value={contactTimelineType} onChange={(event) => setContactTimelineType(event.target.value as ContactTimelineEntry['type'])}>
-                  <option value="Llamada">Llamada</option>
-                  <option value="Reunion">Reunion</option>
-                  <option value="Email">Email</option>
-                  <option value="Nota">Nota</option>
-                  <option value="Estado">Estado</option>
-                </select>
-              </label>
-              <label>
-                Fecha
-                <input type="date" value={contactTimelineDate} onChange={(event) => setContactTimelineDate(event.target.value)} />
-              </label>
-              <label>
-                Titulo
-                <input value={contactTimelineTitle} onChange={(event) => setContactTimelineTitle(event.target.value)} placeholder="Ej. Llamada de seguimiento" />
-              </label>
-              <label>
-                Resultado
-                <textarea value={contactTimelineResult} onChange={(event) => setContactTimelineResult(event.target.value)} placeholder="Que ocurrio y cual es el siguiente paso" />
-              </label>
-              <button type="button" className="primary-btn" onClick={addContactTimeline}>
-                Registrar interaccion
-              </button>
-            </div>
-          </article>
-        </div>
+        <article className="glass-card list-card">
+          <div className="card-head">
+            <h2>Timeline</h2>
+            <p>Actividades, cambios de estado y notas.</p>
+          </div>
+          <div className="timeline">
+            {selectedContact.timeline.length > 0 ? (
+              selectedContact.timeline.map((entry) => (
+                <div key={entry.id} className="timeline-item">
+                  <span className="timeline-dot" />
+                  <div>
+                    <strong>{entry.type} · {entry.title}</strong>
+                    <p>{entry.result}</p>
+                    <small>{formatDate(entry.date)}</small>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">Todavia no hay movimientos registrados.</div>
+            )}
+          </div>
+        </article>
       </section>
     )
   }
 
-  function renderContactForm() {
+  function renderContactForm(onBack = closeContactForm) {
     const matchingOrg = state.organizations.find(
       (org) => normalize(org.nombre) === normalize(contactDraft.orgQuery) || normalize(org.ruc) === normalize(contactDraft.orgQuery) || org.id === contactDraft.orgId,
     )
@@ -1736,6 +2200,17 @@ function App() {
         {renderSectionTitle('Crear o editar contacto', 'Autocompletado por organizacion, deteccion de duplicados en vivo y guardado directo en la base maestra.')}
 
         <article className="glass-card form-card">
+          {!contactDraft.id ? (
+            <label className="checkbox-row">
+              <input
+                type="checkbox"
+                checked={contactDraft.createLead}
+                onChange={(event) => setContactDraft((current) => ({ ...current, createLead: event.target.checked }))}
+              />
+              <span>Crear tambien un lead comercial</span>
+            </label>
+          ) : null}
+
           <div className="form-grid two-cols">
             <label>
               Nombre
@@ -1758,12 +2233,13 @@ function App() {
               <input value={contactDraft.telefono} onChange={(event) => setContactDraft((current) => ({ ...current, telefono: event.target.value }))} />
             </label>
             <label>
-              Estado
+              Estado comercial
               <select value={contactDraft.estado} onChange={(event) => setContactDraft((current) => ({ ...current, estado: event.target.value as Contact['estado'] }))}>
-                <option value="lead activo">Lead activo</option>
+                <option value="activo">Activo</option>
                 <option value="cliente">Cliente</option>
                 <option value="inactivo">Inactivo</option>
               </select>
+              <small>Define si el contacto sigue en prospeccion, ya es cliente o quedo inactivo.</small>
             </label>
           </div>
 
@@ -1795,18 +2271,57 @@ function App() {
             <textarea value={contactDraft.notes} onChange={(event) => setContactDraft((current) => ({ ...current, notes: event.target.value }))} />
           </label>
 
+          {!contactDraft.id && contactDraft.createLead ? (
+            <article className="lead-intake-panel">
+              <h3>Datos del lead</h3>
+              <p>Se usa solo si quieres crear la oportunidad comercial al mismo tiempo que el contacto.</p>
+              <div className="form-grid two-cols">
+                <label>
+                  Servicio
+                  <input value={contactDraft.leadServicio} onChange={(event) => setContactDraft((current) => ({ ...current, leadServicio: event.target.value }))} placeholder="Ej. Desarrollo de bioinsumo" />
+                </label>
+                <label>
+                  Encargado
+                  <input value={contactDraft.leadEncargado} onChange={(event) => setContactDraft((current) => ({ ...current, leadEncargado: event.target.value }))} />
+                </label>
+                <label>
+                  Estado del lead
+                  <select value={contactDraft.leadEstado} onChange={(event) => setContactDraft((current) => ({ ...current, leadEstado: event.target.value as LeadState }))}>
+                    <option value="nuevo">Nuevo</option>
+                    <option value="contacto">En contacto</option>
+                    <option value="propuesta">Propuesta</option>
+                    <option value="cerrado">Cerrado</option>
+                  </select>
+                </label>
+                <label>
+                  Próxima actividad
+                  <input type="date" value={contactDraft.leadNextActivity} onChange={(event) => setContactDraft((current) => ({ ...current, leadNextActivity: event.target.value }))} />
+                </label>
+                <label>
+                  Fecha de cierre
+                  <input type="date" value={contactDraft.leadCloseDate} onChange={(event) => setContactDraft((current) => ({ ...current, leadCloseDate: event.target.value }))} />
+                </label>
+              </div>
+              <label>
+                Desafio / contexto comercial
+                <textarea value={contactDraft.leadChallenge} onChange={(event) => setContactDraft((current) => ({ ...current, leadChallenge: event.target.value }))} />
+              </label>
+            </article>
+          ) : null}
+
           <div className="inline-notice">
             {duplicateEmail ? <span>Este correo ya existe en {duplicateEmail.nombre} {duplicateEmail.apellidos}.</span> : <span>Correo disponible.</span>}
             {similarName ? <span>Este nombre es similar a {similarName.nombre} {similarName.apellidos}.</span> : <span>No se detectaron coincidencias similares.</span>}
             {matchingOrg ? <span>Organizacion detectada: {matchingOrg.nombre}.</span> : <span>Selecciona una organizacion existente.</span>}
+            {!contactDraft.id ? <span>{contactDraft.createLead ? 'Se creara tambien el lead asociado.' : 'Se guardara solo el contacto.'}</span> : null}
           </div>
 
           <div className="button-row">
-            <button type="button" className="ghost-btn" onClick={() => navigate('contact')}>
+            <button type="button" className="ghost-btn" onClick={onBack}>
               Volver al detalle
             </button>
-            <button type="button" className="primary-btn" onClick={saveContact} disabled={!matchingOrg}>
-              Guardar contacto
+            <button type="button" className="primary-btn" onClick={saveContact} disabled={!matchingOrg || (!contactDraft.id && contactDraft.createLead && !contactDraft.leadServicio.trim())}>
+              {contactDraft.id ? 'Guardar contacto' : contactDraft.createLead ? 'Guardar contacto y lead' : 'Guardar contacto'}
             </button>
           </div>
         </article>
@@ -1814,7 +2329,7 @@ function App() {
     )
   }
 
-  function renderOrganizationForm() {
+  function renderOrganizationForm(onBack = () => navigate('organization')) {
     const duplicateRuc = state.organizations.find((item) => normalize(item.ruc) === normalize(organizationDraft.ruc) && item.id !== organizationDraft.id)
 
     return (
@@ -1896,7 +2411,7 @@ function App() {
           </div>
 
           <div className="button-row">
-            <button type="button" className="ghost-btn" onClick={() => navigate('organization')}>
+            <button type="button" className="ghost-btn" onClick={onBack}>
               Volver al detalle
             </button>
             <button type="button" className="primary-btn" onClick={saveOrganization} disabled={!!duplicateRuc && organizationDraft.id === null}>
@@ -1908,30 +2423,26 @@ function App() {
     )
   }
 
-  function renderPipeline() {
+  function renderLeadForm(onBack = closeLeadForm) {
     const leadByContact = state.contacts.find((item) => item.id === leadDraft.contactoId)
-    const leadByOrg = leadByContact ? state.organizations.find((item) => item.id === leadByContact.orgId) : null
-
-    const columns = leadColumns.map((column) => ({
-      ...column,
-      items: state.leads.filter((lead) => lead.estado === column.key),
-    }))
+    const leadOrganization = state.organizations.find((item) => item.id === leadDraft.orgId) ?? (leadByContact ? state.organizations.find((item) => item.id === leadByContact.orgId) ?? null : null)
+    const leadContacts = leadOrganization ? state.contacts.filter((item) => item.orgId === leadOrganization.id) : state.contacts
 
     return (
       <section className="view-grid">
-        {renderSectionTitle('Pipeline comercial', 'Kanban con arrastre para hacer visible el flujo de leads y evitar la hoja oculta de siempre.')}
+        {renderSectionTitle(leadDraft.id ? 'Editar lead' : 'Convertir contacto a lead', 'El lead nace desde un contacto ya creado y hereda su organizacion.')}
 
         <article className="glass-card form-card compact-form">
-          <div className="card-head">
-            <h2>Nuevo lead</h2>
-            <p>Se crea desde un contacto existente y entra directo al pipeline.</p>
-          </div>
           <div className="form-grid two-cols">
             <label>
+              Organizacion
+              <input value={leadOrganization?.nombre ?? 'Selecciona una organizacion en su detalle'} readOnly />
+            </label>
+            <label>
               Contacto
-              <select value={leadDraft.contactoId} onChange={(event) => setLeadDraft((current) => ({ ...current, contactoId: event.target.value }))}>
+              <select value={leadDraft.contactoId} onChange={(event) => setLeadDraft((current) => ({ ...current, contactoId: event.target.value }))} disabled={leadContactLocked}>
                 <option value="">Selecciona un contacto</option>
-                {state.contacts.map((contact) => (
+                {leadContacts.map((contact) => (
                   <option key={contact.id} value={contact.id}>
                     {contact.nombre} {contact.apellidos}
                   </option>
@@ -1970,18 +2481,41 @@ function App() {
           </label>
           <div className="inline-notice">
             <span>{leadByContact ? `Contacto vinculado: ${leadByContact.nombre} ${leadByContact.apellidos}.` : 'Elige un contacto para crear el lead.'}</span>
-            <span>{leadByOrg ? `Organizacion: ${leadByOrg.nombre}.` : 'La organizacion se resuelve automaticamente desde el contacto.'}</span>
+            <span>{leadOrganization ? `Organizacion: ${leadOrganization.nombre}.` : 'La organizacion se resuelve automaticamente desde el contacto.'}</span>
           </div>
-          <button type="button" className="primary-btn" onClick={saveLead} disabled={!leadDraft.contactoId}>
-            Crear lead
-          </button>
+          <div className="button-row">
+            <button type="button" className="ghost-btn" onClick={onBack}>
+              Volver al detalle
+            </button>
+            <button type="button" className="primary-btn" onClick={saveLead} disabled={!leadDraft.contactoId}>
+              {leadDraft.id ? 'Guardar lead' : 'Convertir a lead'}
+            </button>
+          </div>
         </article>
+      </section>
+    )
+  }
+
+  function renderPipeline() {
+    const columns = leadColumns.map((column) => ({
+      ...column,
+      items: state.leads.filter((lead) => lead.estado === column.key),
+    }))
+
+    return (
+      <section className="view-grid">
+        {renderSectionTitle(
+          'Pipeline comercial',
+          'Kanban con arrastre para hacer visible el flujo de leads. La creacion vive en Contactos.',
+          <button type="button" className="primary-btn" onClick={() => setView('organization')}>
+            Ir a organizaciones
+          </button>,
+        )}
 
         <div className="kanban-grid">
           {columns.map((column) => (
             <div
               key={column.key}
-              className="kanban-column"
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
                 const leadId = event.dataTransfer.getData('text/plain')
@@ -2048,7 +2582,6 @@ function App() {
             </button>
           </div>,
         )}
-
         <div className="detail-hero glass-card">
           <div>
             <p className="eyebrow">Lead {selectedLead.estado}</p>
@@ -2075,11 +2608,13 @@ function App() {
           </div>
         </div>
 
-        <div className="detail-grid">
+        <div className="detail-grid lead-detail-grid">
           <article className="glass-card list-card">
             <div className="card-head">
-              <h2>Campos editables</h2>
-              <p>Actualizacion inmediata del pipeline.</p>
+              <div>
+                <h2>Datos del lead</h2>
+                <p>Actualizacion inmediata del pipeline.</p>
+              </div>
             </div>
             <div className="form-stack compact">
               <label>
@@ -2112,8 +2647,10 @@ function App() {
 
           <article className="glass-card list-card">
             <div className="card-head">
-              <h2>Registrar actividad</h2>
-              <p>Nuevo modelo estructurado para el historial.</p>
+              <div>
+                <h2>Seguimiento</h2>
+                <p>Nuevo modelo estructurado para registrar avances segun el tipo de contacto.</p>
+              </div>
             </div>
             <div className="form-stack compact">
               <label>
@@ -2125,16 +2662,44 @@ function App() {
                   <option value="Seguimiento">Seguimiento</option>
                 </select>
               </label>
+              <p className="field-hint">
+                {leadActivityType === 'Reunion'
+                  ? 'Incluye agenda y resultado de la reunion.'
+                  : leadActivityType === 'Email'
+                    ? 'Incluye destinatario, asunto y resultado del envio.'
+                    : leadActivityType === 'Llamada'
+                      ? 'Registra motivo y resultado de la llamada.'
+                      : 'Registra un avance comercial general.'}
+              </p>
+              {leadActivityType === 'Reunion' ? (
+                <div className="inline-notice">
+                  <span>Reunion seleccionada: puedes dejar una agenda preparada, pero no se envia nada automaticamente.</span>
+                  <button type="button" className="ghost-btn" disabled>
+                    Agendar en calendar
+                  </button>
+                </div>
+              ) : null}
+              {leadActivityType === 'Email' ? (
+                <label>
+                  Destinatario
+                  <input
+                    type="email"
+                    value={leadActivityEmailTo}
+                    onChange={(event) => setLeadActivityEmailTo(event.target.value)}
+                    placeholder="correo@empresa.com"
+                  />
+                </label>
+              ) : null}
               <label>
                 Fecha
                 <input type="date" value={leadActivityDate} onChange={(event) => setLeadActivityDate(event.target.value)} />
               </label>
               <label>
-                Notas
+                {leadActivityType === 'Email' ? 'Asunto o notas' : 'Notas'}
                 <textarea value={leadActivityNotes} onChange={(event) => setLeadActivityNotes(event.target.value)} />
               </label>
               <label>
-                Resultado
+                {leadActivityType === 'Reunion' ? 'Resultado de la reunion' : 'Resultado'}
                 <textarea value={leadActivityResult} onChange={(event) => setLeadActivityResult(event.target.value)} />
               </label>
               <button type="button" className="primary-btn" onClick={addLeadActivity}>
@@ -2146,8 +2711,10 @@ function App() {
 
         <article className="glass-card list-card">
           <div className="card-head">
-            <h2>Timeline del lead</h2>
-            <p>Actividades realizadas.</p>
+            <div>
+              <h2>Historial del lead</h2>
+              <p>Actividades realizadas.</p>
+            </div>
           </div>
           <div className="stack-list">
             {selectedLead.activities.length > 0 ? (
@@ -2206,6 +2773,75 @@ function App() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </article>
+      </section>
+    )
+  }
+
+  function renderQuoteForm(onBack = closeQuoteForm) {
+    const lead = state.leads.find((item) => item.id === quoteDraft.leadId)
+    const org = state.organizations.find((item) => item.id === lead?.orgId)
+
+    return (
+      <section className="view-grid">
+        {renderSectionTitle('Crear cotizacion', 'Completa los datos clave y guarda la propuesta para abrir su detalle.')}
+
+        <article className="glass-card form-card">
+          <div className="form-grid two-cols">
+            <label>
+              Lead asociado
+              <input value={lead ? `${lead.servicio} · ${org?.nombre ?? 'Sin organizacion'}` : 'Sin lead'} disabled />
+            </label>
+            <label>
+              Cliente
+              <input value={quoteDraft.cliente} onChange={(event) => setQuoteDraft((current) => ({ ...current, cliente: event.target.value }))} />
+            </label>
+            <label>
+              Monto
+              <input type="number" value={quoteDraft.monto} onChange={(event) => setQuoteDraft((current) => ({ ...current, monto: event.target.value }))} placeholder="0" />
+            </label>
+            <label>
+              Moneda
+              <input value={quoteDraft.moneda} onChange={(event) => setQuoteDraft((current) => ({ ...current, moneda: event.target.value }))} />
+            </label>
+            <label>
+              Fecha
+              <input type="date" value={quoteDraft.fecha} onChange={(event) => setQuoteDraft((current) => ({ ...current, fecha: event.target.value }))} />
+            </label>
+            <label>
+              Estado
+              <select value={quoteDraft.estado} onChange={(event) => setQuoteDraft((current) => ({ ...current, estado: event.target.value as QuoteState }))}>
+                <option value="borrador">Borrador</option>
+                <option value="enviada">Enviada</option>
+                <option value="aceptada">Aceptada</option>
+                <option value="rechazada">Rechazada</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="form-grid two-cols">
+            <label>
+              Servicio
+              <input value={quoteDraft.servicio} onChange={(event) => setQuoteDraft((current) => ({ ...current, servicio: event.target.value }))} />
+            </label>
+            <label>
+              Documento
+              <input value={quoteDraft.documento} onChange={(event) => setQuoteDraft((current) => ({ ...current, documento: event.target.value }))} placeholder="Opcional" />
+            </label>
+          </div>
+
+          <div className="inline-notice">
+            <span>Al guardar se creara la cotizacion y se abrira su detalle para edicion rapida.</span>
+          </div>
+
+          <div className="button-row">
+            <button type="button" className="ghost-btn" onClick={onBack}>
+              Cancelar
+            </button>
+            <button type="button" className="primary-btn" onClick={saveQuote} disabled={!quoteDraft.leadId}>
+              Crear cotizacion
+            </button>
           </div>
         </article>
       </section>
@@ -2333,35 +2969,112 @@ function App() {
   function renderBulkView() {
     return (
       <section className="view-grid">
-        {renderSectionTitle('Carga masiva', 'Upload de Excel o CSV con preview, deteccion de duplicados y estrategias de importacion.')}
+        {renderSectionTitle('Carga masiva', 'Importa, filtra y exporta datos sin perder contexto comercial.')}
 
-        <article className="glass-card form-card">
-          <label>
-            Archivo
-            <input
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              onChange={(event) => handleBulkUpload(event.target.files?.[0])}
-            />
-          </label>
-          <div className="button-row">
-            <button type="button" className={`tab-btn ${bulkMode === 'crear' ? 'active' : ''}`} onClick={() => setBulkMode('crear')}>
-              Crear nuevo
+        <div className="detail-grid">
+          <article className="glass-card form-card">
+            <div className="card-head">
+              <div>
+                <h2>Importar</h2>
+                <p>Sube CSV o Excel para revisar duplicados y decidir que hacer.</p>
+              </div>
+            </div>
+            <label>
+              Archivo
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={(event) => handleBulkUpload(event.target.files?.[0])}
+              />
+            </label>
+            <div className="button-row">
+              <button type="button" className={`tab-btn ${bulkMode === 'crear' ? 'active' : ''}`} onClick={() => setBulkMode('crear')}>
+                Crear nuevo
+              </button>
+              <button type="button" className={`tab-btn ${bulkMode === 'actualizar' ? 'active' : ''}`} onClick={() => setBulkMode('actualizar')}>
+                Actualizar existente
+              </button>
+              <button type="button" className={`tab-btn ${bulkMode === 'ignorar' ? 'active' : ''}`} onClick={() => setBulkMode('ignorar')}>
+                Ignorar duplicados
+              </button>
+            </div>
+            <div className="inline-notice">
+              <span>{bulkFeedback}</span>
+            </div>
+            <button type="button" className="primary-btn" onClick={applyBulkImport} disabled={bulkRows.length === 0}>
+              Procesar importacion
             </button>
-            <button type="button" className={`tab-btn ${bulkMode === 'actualizar' ? 'active' : ''}`} onClick={() => setBulkMode('actualizar')}>
-              Actualizar existente
+          </article>
+
+          <article className="glass-card form-card">
+            <div className="card-head">
+              <div>
+                <h2>Exportar</h2>
+                <p>Descarga un CSV filtrado por organizacion, tipo y campos relevantes.</p>
+              </div>
+            </div>
+            <div className="form-grid two-cols">
+              <label>
+                Tipo de exportacion
+                <select value={bulkExportType} onChange={(event) => setBulkExportType(event.target.value as typeof bulkExportType)}>
+                  <option value="contactos">Contactos</option>
+                  <option value="leads">Leads</option>
+                  <option value="organizaciones">Organizaciones</option>
+                </select>
+              </label>
+              <label>
+                Organizacion
+                <select value={bulkExportOrganizationId} onChange={(event) => setBulkExportOrganizationId(event.target.value)}>
+                  <option value="todas">Todas</option>
+                  {state.organizations.map((org) => (
+                    <option key={org.id} value={org.id}>{org.nombre}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Sector
+                <select value={bulkExportSector} onChange={(event) => setBulkExportSector(event.target.value)}>
+                  <option value="todos">Todos</option>
+                  {organizationSectorOptions.map((sector) => (
+                    <option key={sector} value={sector}>{sector}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Tipo de organizacion
+                <select value={bulkExportOrgType} onChange={(event) => setBulkExportOrgType(event.target.value)}>
+                  <option value="todos">Todos</option>
+                  {organizationTypeOptions.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </label>
+              {bulkExportType === 'contactos' ? (
+                <label>
+                  Estado del contacto
+                  <select value={bulkExportContactState} onChange={(event) => setBulkExportContactState(event.target.value as typeof bulkExportContactState)}>
+                    <option value="todos">Todos</option>
+                    <option value="activo">Activo</option>
+                    <option value="cliente">Cliente</option>
+                    <option value="inactivo">Inactivo</option>
+                  </select>
+                </label>
+              ) : null}
+            </div>
+            {bulkExportType === 'contactos' ? (
+              <label className="checkbox-row">
+                <input type="checkbox" checked={bulkExportOnlyEmail} onChange={(event) => setBulkExportOnlyEmail(event.target.checked)} />
+                <span>Solo contactos con correo</span>
+              </label>
+            ) : null}
+            <div className="inline-notice">
+              <span>La exportacion respeta los filtros elegidos y genera un CSV listo para enviar o revisar.</span>
+            </div>
+            <button type="button" className="secondary-btn" onClick={exportBulkData}>
+              Exportar CSV filtrado
             </button>
-            <button type="button" className={`tab-btn ${bulkMode === 'ignorar' ? 'active' : ''}`} onClick={() => setBulkMode('ignorar')}>
-              Ignorar duplicados
-            </button>
-          </div>
-          <div className="inline-notice">
-            <span>{bulkFeedback}</span>
-          </div>
-          <button type="button" className="primary-btn" onClick={applyBulkImport} disabled={bulkRows.length === 0}>
-            Procesar importacion
-          </button>
-        </article>
+          </article>
+        </div>
 
         <article className="glass-card list-card">
           <div className="card-head">
@@ -2397,54 +3110,119 @@ function App() {
     )
   }
 
-  function renderUsers() {
-    return (
-      <section className="view-grid">
-        {renderSectionTitle('Usuarios y roles', 'Controla acceso sensible para cotizaciones, leads y carga de contactos.')}
-
-        <div className="result-grid">
-          {roles.map((role) => (
-            <article key={role} className="glass-card panel-card">
-              <div className="card-head">
-                <h2>{role}</h2>
-                <p>Permisos resumidos</p>
-              </div>
-              <div className="stack-list">
-                {state.users.filter((user) => user.rol === role).map((user) => (
-                  <div key={user.id} className="role-card">
-                    <strong>{user.nombre}</strong>
-                    <span>{user.correo}</span>
-                    <small>{user.permisos.join(' · ')}</small>
-                  </div>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-    )
-  }
-
   function renderNotifications() {
+    const todayLeads = upcomingLeads.filter((lead) => lead.nextActivity === todayIso)
+
     return (
       <section className="view-grid">
         {renderSectionTitle('Notificaciones y recordatorios', 'Alertas visibles para que el seguimiento no dependa de memoria manual.')}
 
+        <div className="kpi-grid">
+          <article className="glass-card kpi-card">
+            <span>Alertas activas</span>
+            <strong>{dashboardAlerts.staleLeads.length + dashboardAlerts.staleQuotes.length + todayLeads.length}</strong>
+            <small>Leads, cotizaciones y tareas pendientes.</small>
+          </article>
+          <article className="glass-card kpi-card">
+            <span>Para hoy</span>
+            <strong>{todayLeads.length}</strong>
+            <small>Seguimientos que vencen hoy.</small>
+          </article>
+          <article className="glass-card kpi-card">
+            <span>Vencidas</span>
+            <strong>{dashboardAlerts.staleLeads.length + dashboardAlerts.staleQuotes.length}</strong>
+            <small>Sin actividad reciente o sin actualización.</small>
+          </article>
+        </div>
+
         <div className="result-grid">
           <article className="glass-card panel-card">
             <div className="card-head">
-              <h2>Alertas activas</h2>
-              <p>Resumen operativo</p>
+              <h2>Leads sin seguimiento</h2>
+              <p>{dashboardAlerts.staleLeads.length} registros</p>
             </div>
             <div className="stack-list">
-              {notifications.map((item) => (
-                <div key={item.id} className={`notice notice-${item.level}`}>
-                  <strong>{item.title}</strong>
-                  <span>{item.detail}</span>
-                  <small>{item.due}</small>
-                </div>
-              ))}
-              {notifications.length === 0 ? <div className="empty-state">No hay recordatorios activos.</div> : null}
+              {dashboardAlerts.staleLeads.map((lead) => {
+                const contact = state.contacts.find((item) => item.id === lead.contactoId)
+                const org = state.organizations.find((item) => item.id === lead.orgId)
+
+                return (
+                  <div key={lead.id} className="notice notice-alta">
+                    <strong>{contact ? `${contact.nombre} ${contact.apellidos}` : lead.servicio}</strong>
+                    <span>{org?.nombre ?? 'Sin organizacion'} · {lead.servicio}</span>
+                    <small>{lead.nextActivity ? `Proxima actividad: ${formatDate(lead.nextActivity)}` : 'Sin proxima actividad'}</small>
+                    <div className="button-row">
+                      <button type="button" className="secondary-btn" onClick={() => openLeadDetail(lead.id)}>
+                        Abrir lead
+                      </button>
+                      {contact ? (
+                        <button type="button" className="ghost-btn" onClick={() => openContactDetail(contact.id)}>
+                          Abrir contacto
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              })}
+              {dashboardAlerts.staleLeads.length === 0 ? <div className="empty-state">No hay leads sin seguimiento.</div> : null}
+            </div>
+          </article>
+
+          <article className="glass-card panel-card">
+            <div className="card-head">
+              <h2>Cotizaciones sin actualizar</h2>
+              <p>{dashboardAlerts.staleQuotes.length} registros</p>
+            </div>
+            <div className="stack-list">
+              {dashboardAlerts.staleQuotes.map((quote) => {
+                const lead = state.leads.find((item) => item.id === quote.leadId)
+                const contact = state.contacts.find((item) => item.id === quote.contactoId)
+
+                return (
+                  <div key={quote.id} className="notice notice-media">
+                    <strong>{formatMoney(quote.monto, quote.moneda)}</strong>
+                    <span>{quote.servicio || 'Sin servicio'} · {quote.estado}</span>
+                    <small>{contact ? `${contact.nombre} ${contact.apellidos}` : quote.cliente} · {lead ? `Lead ${lead.estado}` : 'Sin lead asociado'}</small>
+                    <div className="button-row">
+                      <button type="button" className="secondary-btn" onClick={() => openQuoteDetail(quote.id)}>
+                        Abrir cotizacion
+                      </button>
+                      {lead ? (
+                        <button type="button" className="ghost-btn" onClick={() => openLeadDetail(lead.id)}>
+                          Abrir lead
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              })}
+              {dashboardAlerts.staleQuotes.length === 0 ? <div className="empty-state">No hay cotizaciones sin actualizar.</div> : null}
+            </div>
+          </article>
+
+          <article className="glass-card panel-card">
+            <div className="card-head">
+              <h2>Tareas de hoy</h2>
+              <p>{todayLeads.length} registros</p>
+            </div>
+            <div className="stack-list">
+              {todayLeads.map((lead) => {
+                const contact = state.contacts.find((item) => item.id === lead.contactoId)
+
+                return (
+                  <div key={lead.id} className="notice notice-baja">
+                    <strong>{contact ? `${contact.nombre} ${contact.apellidos}` : lead.servicio}</strong>
+                    <span>{lead.servicio}</span>
+                    <small>{formatDate(lead.nextActivity)} · {lead.encargado}</small>
+                    <div className="button-row">
+                      <button type="button" className="secondary-btn" onClick={() => openLeadDetail(lead.id)}>
+                        Marcar en seguimiento
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+              {todayLeads.length === 0 ? <div className="empty-state">No hay tareas para hoy.</div> : null}
             </div>
           </article>
 
@@ -2456,11 +3234,11 @@ function App() {
             <div className="stack-list">
               <div className="role-card">
                 <strong>Hoy</strong>
-                <span>Seguimiento de leads vencidos.</span>
+                <span>Seguimiento de leads sin actividad o vencidos.</span>
               </div>
               <div className="role-card">
                 <strong>Esta semana</strong>
-                <span>Revisar cotizaciones pendientes y aprobaciones.</span>
+                <span>Revisar cotizaciones pendientes, cambios y aprobaciones.</span>
               </div>
               <div className="role-card">
                 <strong>Mensual</strong>
@@ -2473,6 +3251,18 @@ function App() {
     )
   }
 
+  function renderContactDetailModal() {
+    return renderContactDetail()
+  }
+
+  function renderLeadDetailModal() {
+    return renderLeadDetail()
+  }
+
+  function renderQuoteDetailModal() {
+    return renderQuoteDetail()
+  }
+
   function renderView() {
     switch (view) {
       case 'search':
@@ -2481,22 +3271,14 @@ function App() {
         return renderOrganizationDetail()
       case 'organization-form':
         return renderOrganizationForm()
-      case 'contact':
-        return renderContactDetail()
       case 'contact-form':
         return renderContactForm()
       case 'pipeline':
         return renderPipeline()
-      case 'lead':
-        return renderLeadDetail()
       case 'quotes':
         return renderQuotes()
-      case 'quote':
-        return renderQuoteDetail()
       case 'bulk':
         return renderBulkView()
-      case 'users':
-        return renderUsers()
       case 'notifications':
         return renderNotifications()
       case 'dashboard':
@@ -2534,40 +3316,70 @@ function App() {
             {renderNavButton('dashboard', 'Dashboard', 'Pipeline y alertas')}
             {renderNavButton('search', 'Busqueda', 'Lookup unificado')}
             {renderNavButton('organization', 'Organizacion', 'Detalle por RUC')}
-            {renderNavButton('organization-form', 'Crear organizacion', 'Autofill SUNAT')}
-            {renderNavButton('contact', 'Contacto', 'Timeline estructurado')}
-            {renderNavButton('contact-form', 'Crear contacto', 'Duplicados en vivo')}
             {renderNavButton('pipeline', 'Pipeline', 'Kanban de leads')}
-            {renderNavButton('lead', 'Lead', 'Seguimiento comercial')}
-            {renderNavButton('quotes', 'Cotizaciones', 'Tabla y filtros')}
-            {renderNavButton('quote', 'Detalle cotizacion', 'Trazabilidad')}
             {renderNavButton('bulk', 'Carga masiva', 'Excel / CSV')}
-            {renderNavButton('users', 'Usuarios', 'Roles y permisos')}
             {renderNavButton('notifications', 'Alertas', 'Recordatorios')}
           </nav>
-
-          <div className="sidebar-stats">
-            <div className="stat-card">
-              <span>Organizaciones</span>
-              <strong>{state.organizations.length}</strong>
-            </div>
-            <div className="stat-card">
-              <span>Contactos</span>
-              <strong>{state.contacts.length}</strong>
-            </div>
-            <div className="stat-card">
-              <span>Leads activos</span>
-              <strong>{state.leads.filter((lead) => lead.estado !== 'cerrado').length}</strong>
-            </div>
-            <div className="stat-card">
-              <span>Cotizaciones</span>
-              <strong>{state.quotes.length}</strong>
-            </div>
-          </div>
         </aside>
 
         <main className="main-shell">{renderView()}</main>
       </div>
+
+      {organizationModalOpen ? (
+        <div className="modal-backdrop" role="presentation" onClick={closeOrganizationForm}>
+          <div className="modal-shell" role="dialog" aria-modal="true" aria-label="Crear organizacion" onClick={(event) => event.stopPropagation()}>
+            {renderOrganizationForm(closeOrganizationForm)}
+          </div>
+        </div>
+      ) : null}
+
+      {contactModalOpen ? (
+        <div className="modal-backdrop" role="presentation" onClick={closeContactForm}>
+          <div className="modal-shell" role="dialog" aria-modal="true" aria-label="Crear contacto" onClick={(event) => event.stopPropagation()}>
+            {renderContactForm(closeContactForm)}
+          </div>
+        </div>
+      ) : null}
+
+      {leadModalOpen ? (
+        <div className="modal-backdrop" role="presentation" onClick={closeLeadForm}>
+          <div className="modal-shell" role="dialog" aria-modal="true" aria-label="Crear lead" onClick={(event) => event.stopPropagation()}>
+            {renderLeadForm(closeLeadForm)}
+          </div>
+        </div>
+      ) : null}
+
+      {contactDetailModalOpen ? (
+        <div className="modal-backdrop" role="presentation" onClick={closeContactDetail}>
+          <div className="modal-shell modal-shell-wide" role="dialog" aria-modal="true" aria-label="Detalle de contacto" onClick={(event) => event.stopPropagation()}>
+            {renderContactDetailModal()}
+          </div>
+        </div>
+      ) : null}
+
+      {leadDetailModalOpen ? (
+        <div className="modal-backdrop" role="presentation" onClick={closeLeadDetail}>
+          <div className="modal-shell modal-shell-wide" role="dialog" aria-modal="true" aria-label="Detalle de lead" onClick={(event) => event.stopPropagation()}>
+            {renderLeadDetailModal()}
+          </div>
+        </div>
+      ) : null}
+
+      {quoteFormModalOpen ? (
+        <div className="modal-backdrop" role="presentation" onClick={closeQuoteForm}>
+          <div className="modal-shell modal-shell-wide" role="dialog" aria-modal="true" aria-label="Crear cotizacion" onClick={(event) => event.stopPropagation()}>
+            {renderQuoteForm(closeQuoteForm)}
+          </div>
+        </div>
+      ) : null}
+
+      {quoteDetailModalOpen ? (
+        <div className="modal-backdrop" role="presentation" onClick={closeQuoteDetail}>
+          <div className="modal-shell modal-shell-wide" role="dialog" aria-modal="true" aria-label="Detalle de cotizacion" onClick={(event) => event.stopPropagation()}>
+            {renderQuoteDetailModal()}
+          </div>
+        </div>
+      ) : null}
 
       {menuOpen ? <button type="button" className="backdrop-layer" onClick={() => setMenuOpen(false)} aria-label="Cerrar menu" /> : null}
 

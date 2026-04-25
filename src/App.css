@@ -263,6 +263,7 @@
 .primary-btn,
 .secondary-btn,
 .ghost-btn,
+.danger-btn,
 .tab-btn,
 .menu-toggle {
   border: 0;
@@ -281,10 +282,16 @@
 
 .secondary-btn,
 .ghost-btn,
+.danger-btn,
 .tab-btn,
 .menu-toggle {
   background: rgba(255, 255, 255, 0.72);
   color: var(--text);
+}
+
+.danger-btn {
+  background: rgba(166, 58, 58, 0.12);
+  color: var(--danger);
 }
 
 .primary-btn:hover,
@@ -358,6 +365,19 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.lead-detail-grid {
+  grid-template-columns: 1.05fr 0.95fr;
+}
+
+.lead-detail-grid + .glass-card,
+.lead-detail-grid ~ .glass-card {
+  margin-top: 0;
+}
+
+.lead-detail-grid .list-card {
+  min-height: 100%;
+}
+
 .panel-card,
 .result-card,
 .form-card,
@@ -380,6 +400,26 @@
 
 .card-head p {
   margin: 4px 0 0;
+}
+
+.lead-status-note {
+  align-self: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(13, 107, 53, 0.08);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.back-arrow-btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  font-size: 1.3rem;
+  line-height: 1;
 }
 
 .bar-chart {
@@ -457,6 +497,31 @@
   cursor: pointer;
 }
 
+.organization-row {
+  display: grid;
+  gap: 10px;
+}
+
+.organization-row-main {
+  width: 100%;
+}
+
+.organization-row-actions {
+  justify-content: flex-start;
+}
+
+.organization-filters {
+  padding: 18px;
+}
+
+.organization-filters .form-grid {
+  align-items: end;
+}
+
+.organization-filters .ghost-btn {
+  width: 100%;
+}
+
 .agenda-item:hover,
 .result-item:hover,
 .list-row:hover,
@@ -508,6 +573,15 @@
   background: rgba(255, 255, 255, 0.9);
   color: var(--text);
   box-shadow: 0 0 0 1px rgba(24, 33, 27, 0.08) inset;
+}
+
+.form-card input[type='checkbox'] {
+  width: auto;
+  box-sizing: border-box;
+  padding: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  accent-color: var(--primary);
 }
 
 .spotlight-input {
@@ -653,12 +727,51 @@ label {
   color: var(--text);
 }
 
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(13, 107, 53, 0.07);
+  border: 1px solid rgba(13, 107, 53, 0.12);
+  font-weight: 700;
+}
+
+.checkbox-row span {
+  line-height: 1.35;
+}
+
+.lead-intake-panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(13, 107, 53, 0.05);
+  border: 1px solid rgba(13, 107, 53, 0.1);
+}
+
+.lead-intake-panel h3 {
+  margin: 0;
+}
+
+.lead-intake-panel p {
+  margin: 0;
+  color: var(--muted);
+}
+
 .inline-notice {
   display: grid;
   gap: 8px;
   padding: 14px;
   border-radius: 18px;
   background: rgba(13, 107, 53, 0.07);
+}
+
+.inline-notice .ghost-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .kanban-grid {
@@ -678,6 +791,10 @@ label {
 
 .lead-card {
   gap: 8px;
+}
+
+.lead-card .chip-row {
+  margin-top: 2px;
 }
 
 .chip-row {
@@ -743,6 +860,44 @@ label {
   z-index: 15;
   border: 0;
   background: rgba(11, 23, 15, 0.28);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(13, 107, 53, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.modal-shell {
+  width: min(1100px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(244, 247, 242, 0.98), rgba(233, 239, 228, 0.96));
+  border: 1px solid rgba(24, 33, 27, 0.08);
+  box-shadow: 0 30px 70px rgba(9, 32, 16, 0.18);
+}
+
+.modal-shell-wide {
+  width: min(1220px, 100%);
+}
+
+.modal-shell .view-grid {
+  margin: 0;
+  padding: 18px;
+}
+
+.modal-shell .section-head {
+  padding-top: 24px;
+}
+
+.modal-shell .glass-card {
+  background: rgba(255, 255, 255, 0.84);
 }
 
 .menu-toggle {
